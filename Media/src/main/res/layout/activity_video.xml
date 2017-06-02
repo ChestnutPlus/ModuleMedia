@@ -22,7 +22,7 @@
             android:focusable="true"
             android:clickable="true"
             android:id="@+id/img_pause"
-            android:src="@drawable/media_play"
+            android:src="@drawable/media_pause"
             android:layout_gravity="center"
             android:padding="8dp"
             android:layout_margin="5dp"

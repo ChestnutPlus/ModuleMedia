@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.VideoView;
 
 import com.chestnut.Common.utils.BarUtils;
@@ -18,8 +19,9 @@ public class VideoActivity extends AppCompatActivity {
 
     private boolean OpenLog = true;
     private String TAG = "VideoActivity";
-
     private ImageView playIcon;
+    private VideoView videoView;
+    private SeekBar seekBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,13 +31,23 @@ public class VideoActivity extends AppCompatActivity {
         BarUtils.hideStatusBar(this);
         BarUtils.hideNotificationBar(this);
         setContentView(R.layout.activity_video);
-        VideoView videoView = (VideoView) findViewById(R.id.videoView);
+        videoView = (VideoView) findViewById(R.id.videoView);
         playIcon = (ImageView) findViewById(R.id.img_pause);
+        seekBar = (SeekBar) findViewById(R.id.progress);
 
+        //控制播放按钮
         playIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 LogUtils.w(OpenLog,TAG,"playIcon");
+                if (videoView.isPlaying()) {
+                    videoView.pause();
+                    playIcon.setImageResource(R.drawable.media_play);
+                }
+                else {
+                    videoView.start();
+                    playIcon.setImageResource(R.drawable.media_pause);
+                }
             }
         });
 
@@ -47,11 +59,32 @@ public class VideoActivity extends AppCompatActivity {
             }
         });
 
-        //开始播放
+        //开始播放，初始化信息
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
+                playIcon.setImageResource(R.drawable.media_pause);
+                seekBar.setProgress(videoView.getCurrentPosition());
+                seekBar.setMax(videoView.getDuration());
+                LogUtils.w(OpenLog,TAG,"Max:"+videoView.getDuration()+",Progress:"+videoView.getCurrentPosition());
+            }
+        });
 
+        //进度条
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                LogUtils.w(OpenLog,TAG,"onProgressChanged:"+i);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                LogUtils.w(OpenLog,TAG,"onStartTrackingTouch");
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                LogUtils.w(OpenLog,TAG,"onStopTrackingTouch");
             }
         });
 
