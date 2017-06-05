@@ -9,11 +9,13 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.VideoView;
 
 import com.chestnut.Common.utils.BarUtils;
+import com.chestnut.Common.utils.LogUtils;
 import com.chestnut.Media.R;
 
 import java.util.concurrent.TimeUnit;
@@ -28,7 +30,6 @@ public class VideoActivity extends AppCompatActivity {
     public static String VIDEO_URL = "VIDEO_URL";
     public static String VIDEO_TITLE = "VIDEO_TITLE";
     public static String VIDEO_TYPE = "VIDEO_TYPE";
-
     public static int TYPE_ONLINE = -99;
     public static int TYPE_LOCAL = -111;
 
@@ -42,6 +43,7 @@ public class VideoActivity extends AppCompatActivity {
     private TextView playedTime;
     private View bottom_view;
     private View top_view;
+    private ProgressBar progressBarLoading;
 
     private Subscription updatePositionTimerSubscription;
     private Subscription delayHideBottomViewSubscription;
@@ -64,6 +66,8 @@ public class VideoActivity extends AppCompatActivity {
         totalTime = (TextView) findViewById(R.id.txt_total);
         bottom_view = findViewById(R.id.bottom_view);
         top_view = findViewById(R.id.top_view);
+        View layout_view = findViewById(R.id.layout_view);
+        progressBarLoading = (ProgressBar) findViewById(R.id.progress_loading);
 
         //退出按钮
         findViewById(R.id.img_close).setOnClickListener(new View.OnClickListener() {
@@ -81,7 +85,7 @@ public class VideoActivity extends AppCompatActivity {
         });
 
         //隐藏ControlView
-        videoView.setOnTouchListener(new View.OnTouchListener() {
+        layout_view.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if (isError)
@@ -115,6 +119,9 @@ public class VideoActivity extends AppCompatActivity {
                     showControlView();
                 }
                 else {
+                    if (videoView.getCurrentPosition()==1213) {
+                        videoView.seekTo(0);
+                    }
                     videoView.start();
                     playIcon.setImageResource(R.drawable.media_pause);
                     startUpdatePositionTimer();
@@ -131,7 +138,7 @@ public class VideoActivity extends AppCompatActivity {
                     return;
                 playIcon.setImageResource(R.drawable.media_play);
                 seekBar.setProgress(0);
-                videoView.seekTo(0);
+                videoView.seekTo(1213);
                 playedTime.setText("00:00");
                 stopUpdatePositionTimer();
                 showControlView();
@@ -150,6 +157,33 @@ public class VideoActivity extends AppCompatActivity {
                 totalTime.setText(TimeUtils.toMediaTime(videoView.getDuration()/1000));
                 playedTime.setText(TimeUtils.toMediaTime(videoView.getCurrentPosition()/1000));
                 startUpdatePositionTimer();
+            }
+        });
+
+        //播放Error
+        videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+                isError = true;
+                showControlView();
+                return false;
+            }
+        });
+
+        //缓冲监听
+        videoView.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+            public boolean onInfo(MediaPlayer mp, int what, int extra) {
+                if(what == MediaPlayer.MEDIA_INFO_BUFFERING_START){
+                    progressBarLoading.setVisibility(View.VISIBLE);
+                    showControlView();
+                }else if(what == MediaPlayer.MEDIA_INFO_BUFFERING_END){
+                    //此接口每次回调完START就回调END,若不加上判断就会出现缓冲图标一闪一闪的卡顿现象
+                    if(mp.isPlaying()){
+                        progressBarLoading.setVisibility(View.INVISIBLE);
+                        startNewDelayHideControlView();
+                    }
+                }
+                return true;
             }
         });
 
@@ -194,10 +228,14 @@ public class VideoActivity extends AppCompatActivity {
             String url = getIntent().getExtras().getString(VIDEO_URL, null);
             int type = getIntent().getExtras().getInt(VIDEO_TYPE,-1);
             if (url != null && url.length() != 0 && (type==TYPE_ONLINE || type==TYPE_LOCAL)) {
-                if (type==TYPE_LOCAL)
+                if (type==TYPE_LOCAL) {
                     videoView.setVideoPath(url);
-                else
+                    progressBarLoading.setVisibility(View.GONE);
+                }
+                else {
                     videoView.setVideoURI(Uri.parse(url));
+                    progressBarLoading.setVisibility(View.VISIBLE);
+                }
                 videoView.start();
                 videoView.requestFocus();
                 delayHideControlView();
@@ -222,10 +260,10 @@ public class VideoActivity extends AppCompatActivity {
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-                        if (!isTouchSeekBar) {
+                        if (!isTouchSeekBar && videoView!=null) {
                             seekBar.setProgress(videoView.getCurrentPosition() / 1000);
                             if (videoView.getCurrentPosition()/1000>videoView.getDuration()/1000)
-                                playedTime.setText(TimeUtils.toMediaTime(videoView.getDuration()/100));
+                                playedTime.setText(TimeUtils.toMediaTime(videoView.getDuration()/1000));
                             else
                                 playedTime.setText(TimeUtils.toMediaTime(videoView.getCurrentPosition()/1000));
                         }
@@ -291,5 +329,44 @@ public class VideoActivity extends AppCompatActivity {
         if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isUnsubscribed())
             delayHideBottomViewSubscription.unsubscribe();
         delayHideBottomViewSubscription = null;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (videoView.isPlaying())
+            videoView.pause();
+        videoView = null;
+        if (updatePositionTimerSubscription!=null && !updatePositionTimerSubscription.isUnsubscribed())
+            updatePositionTimerSubscription.unsubscribe();
+        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isUnsubscribed())
+            delayHideBottomViewSubscription.unsubscribe();
+        finish();
+    }
+
+    //保存播放进度：
+    private boolean isPlaying = false;
+    @Override
+    protected void onPause() {
+        super.onPause();
+        LogUtils.e(OpenLog,TAG,"onPause");
+        if (videoView!=null) {
+            isPlaying = videoView.isPlaying();
+            nowProgress = videoView.getCurrentPosition();
+            videoView.pause();
+        }
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        LogUtils.e(OpenLog,TAG,"onRestart");
+        if (videoView!=null) {
+            videoView.seekTo(nowProgress);
+            if (isPlaying) {
+                LogUtils.e(OpenLog,TAG,"isPlaying:play");
+                videoView.start();
+                videoView.requestFocus();
+            }
+        }
     }
 }

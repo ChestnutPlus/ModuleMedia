@@ -15,7 +15,7 @@ import com.chestnut.Media.Video.VideoActivity;
 public class MainActivity extends AppCompatActivity {
 
     private boolean OpenLog = true;
-    private String TAG = "VideoActivity";
+    private String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,13 +36,32 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this,VideoActivity.class);
                 intent.putExtra(VideoActivity.VIDEO_TITLE,"南山南");
-                intent.putExtra(VideoActivity.VIDEO_URL, Environment.getExternalStorageDirectory().getPath() + "/3.mp4");
+                intent.putExtra(VideoActivity.VIDEO_URL, Environment.getExternalStorageDirectory().getPath() + "/1.mp4");
                 intent.putExtra(VideoActivity.VIDEO_TYPE,VideoActivity.TYPE_LOCAL);
+//                intent.putExtra(VideoActivity.VIDEO_URL,"http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4");
+//                intent.putExtra(VideoActivity.VIDEO_TYPE,VideoActivity.TYPE_ONLINE);
                 startActivity(intent);
             }
         });
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        LogUtils.w(OpenLog,TAG,"onPause");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        LogUtils.w(OpenLog,TAG,"onStop");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        LogUtils.w(OpenLog,TAG,"onDestroy");
+    }
 
     private final BroadcastReceiver homePressReceiver = new BroadcastReceiver() {
         final String SYSTEM_DIALOG_REASON_KEY = "reason";
