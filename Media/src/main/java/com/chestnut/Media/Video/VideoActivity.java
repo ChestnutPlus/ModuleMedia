@@ -44,6 +44,7 @@ public class VideoActivity extends AppCompatActivity {
     private View bottom_view;
     private View top_view;
     private ProgressBar progressBarLoading;
+    private MediaPlayer.OnPreparedListener onPreparedListener;
 
     private Subscription updatePositionTimerSubscription;
     private Subscription delayHideBottomViewSubscription;
@@ -146,7 +147,7 @@ public class VideoActivity extends AppCompatActivity {
         });
 
         //开始播放
-        videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+        onPreparedListener = new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
                 if (isError)
@@ -157,8 +158,11 @@ public class VideoActivity extends AppCompatActivity {
                 totalTime.setText(TimeUtils.toMediaTime(videoView.getDuration()/1000));
                 playedTime.setText(TimeUtils.toMediaTime(videoView.getCurrentPosition()/1000));
                 startUpdatePositionTimer();
+                startNewDelayHideControlView();
+                LogUtils.e(OpenLog,TAG,"setOnPreparedListener");
             }
-        });
+        };
+        videoView.setOnPreparedListener(onPreparedListener);
 
         //播放Error
         videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
@@ -266,6 +270,7 @@ public class VideoActivity extends AppCompatActivity {
                                 playedTime.setText(TimeUtils.toMediaTime(videoView.getDuration()/1000));
                             else
                                 playedTime.setText(TimeUtils.toMediaTime(videoView.getCurrentPosition()/1000));
+                            LogUtils.e(OpenLog,TAG,"getCurrentPosition:"+videoView.getCurrentPosition());
                         }
                     }
                 });
@@ -344,29 +349,40 @@ public class VideoActivity extends AppCompatActivity {
     }
 
     //保存播放进度：
-    private boolean isPlaying = false;
+    private boolean onPauseStorePlaying = false;
+    private int onPauseStoreProgress = 0;
     @Override
     protected void onPause() {
         super.onPause();
-        LogUtils.e(OpenLog,TAG,"onPause");
         if (videoView!=null) {
-            isPlaying = videoView.isPlaying();
-            nowProgress = videoView.getCurrentPosition();
+            onPauseStorePlaying = videoView.isPlaying();
+            onPauseStoreProgress = videoView.getCurrentPosition();
             videoView.pause();
+            videoView.setOnPreparedListener(null);
         }
+        if (updatePositionTimerSubscription!=null && !updatePositionTimerSubscription.isUnsubscribed())
+            updatePositionTimerSubscription.unsubscribe();
+        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isUnsubscribed())
+            delayHideBottomViewSubscription.unsubscribe();
+        LogUtils.e(OpenLog,TAG,"onPause-info:"+onPauseStorePlaying+","+onPauseStoreProgress);
     }
 
     @Override
     protected void onRestart() {
         super.onRestart();
-        LogUtils.e(OpenLog,TAG,"onRestart");
         if (videoView!=null) {
-            videoView.seekTo(nowProgress);
-            if (isPlaying) {
-                LogUtils.e(OpenLog,TAG,"isPlaying:play");
+            videoView.seekTo(onPauseStoreProgress);
+            if (onPauseStorePlaying) {
                 videoView.start();
                 videoView.requestFocus();
+                playIcon.setImageResource(R.drawable.media_pause);
+                startUpdatePositionTimer();
+                startNewDelayHideControlView();
             }
+            else {
+                playIcon.setImageResource(R.drawable.media_play);
+            }
+            videoView.setOnPreparedListener(onPreparedListener);
         }
     }
 }
