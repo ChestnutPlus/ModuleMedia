@@ -4,6 +4,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
@@ -25,17 +26,31 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 
+/**
+ * <pre>
+ *     author: Chestnut
+ *     blog  : http://www.jianshu.com/u/a0206b5f4526
+ *     time  : 2017/6/2 23:03
+ *     desc  :
+ *     thanks To:
+ *     dependent on:
+ *     update log:
+ *          2017年6月16日23:54:45  栗子
+ *              1.  基本完成了UI和功能测试
+ * </pre>
+ */
 public class VideoActivity extends AppCompatActivity {
 
-    public static String VIDEO_URL = "VIDEO_URL";
-    public static String VIDEO_TITLE = "VIDEO_TITLE";
-    public static String VIDEO_TYPE = "VIDEO_TYPE";
-    public static int TYPE_ONLINE = -99;
-    public static int TYPE_LOCAL = -111;
+    public static final String VIDEO_URL = "VIDEO_URL";
+    public static final String VIDEO_TITLE = "VIDEO_TITLE";
+    public static final String VIDEO_TYPE = "VIDEO_TYPE";
+    public static final int TYPE_ONLINE = -99;
+    public static final int TYPE_LOCAL = -111;
 
     private boolean OpenLog = true;
     private String TAG = "VideoActivity";
 
+    private XToast xToastMusic;
     private ImageView playIcon;
     private VideoView videoView;
     private SeekBar seekBar;
@@ -51,6 +66,7 @@ public class VideoActivity extends AppCompatActivity {
     private boolean isTouchSeekBar = false;
     private int nowProgress = 0;
     private boolean isError = false;
+    private AudioMngHelper audioMngHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +85,8 @@ public class VideoActivity extends AppCompatActivity {
         top_view = findViewById(R.id.top_view);
         View layout_view = findViewById(R.id.layout_view);
         progressBarLoading = (ProgressBar) findViewById(R.id.progress_loading);
+        xToastMusic = new XToast(this);
+        audioMngHelper = new AudioMngHelper(this);
 
         //退出按钮
         findViewById(R.id.img_close).setOnClickListener(new View.OnClickListener() {
@@ -150,8 +168,10 @@ public class VideoActivity extends AppCompatActivity {
         onPreparedListener = new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
-                if (isError)
+                if (isError || onPause) {
+                    onPause = false;
                     return;
+                }
                 playIcon.setImageResource(R.drawable.media_pause);
                 seekBar.setProgress(videoView.getCurrentPosition()/1000);
                 seekBar.setMax(videoView.getDuration()/1000);
@@ -159,7 +179,7 @@ public class VideoActivity extends AppCompatActivity {
                 playedTime.setText(TimeUtils.toMediaTime(videoView.getCurrentPosition()/1000));
                 startUpdatePositionTimer();
                 startNewDelayHideControlView();
-                LogUtils.e(OpenLog,TAG,"setOnPreparedListener");
+//                LogUtils.e(OpenLog,TAG,"setOnPreparedListener");
             }
         };
         videoView.setOnPreparedListener(onPreparedListener);
@@ -270,7 +290,7 @@ public class VideoActivity extends AppCompatActivity {
                                 playedTime.setText(TimeUtils.toMediaTime(videoView.getDuration()/1000));
                             else
                                 playedTime.setText(TimeUtils.toMediaTime(videoView.getCurrentPosition()/1000));
-                            LogUtils.e(OpenLog,TAG,"getCurrentPosition:"+videoView.getCurrentPosition());
+//                            LogUtils.e(OpenLog,TAG,"getCurrentPosition:"+videoView.getCurrentPosition());
                         }
                     }
                 });
@@ -349,11 +369,13 @@ public class VideoActivity extends AppCompatActivity {
     }
 
     //保存播放进度：
+    private boolean onPause = false;
     private boolean onPauseStorePlaying = false;
     private int onPauseStoreProgress = 0;
     @Override
     protected void onPause() {
         super.onPause();
+        onPause = true;
         if (videoView!=null) {
             onPauseStorePlaying = videoView.isPlaying();
             onPauseStoreProgress = videoView.getCurrentPosition();
@@ -370,6 +392,7 @@ public class VideoActivity extends AppCompatActivity {
     @Override
     protected void onRestart() {
         super.onRestart();
+        LogUtils.e(OpenLog,TAG,"onRestart-info:"+onPauseStorePlaying+","+onPauseStoreProgress);
         if (videoView!=null) {
             videoView.seekTo(onPauseStoreProgress);
             if (onPauseStorePlaying) {
@@ -384,5 +407,27 @@ public class VideoActivity extends AppCompatActivity {
             }
             videoView.setOnPreparedListener(onPreparedListener);
         }
+    }
+
+    /**
+     * 监听音量实体按键
+     * @param keyCode
+     * @param event
+     * @return
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        int a;
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+                xToastMusic.setVoice(audioMngHelper.subVoice100()).show();
+                return true;
+            case KeyEvent.KEYCODE_VOLUME_UP:
+                xToastMusic.setVoice(audioMngHelper.addVoice100()).show();
+                return true;
+            case KeyEvent.KEYCODE_VOLUME_MUTE:
+                break;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }
