@@ -1,9 +1,11 @@
 package com.chestnut.Media.Video;
 
 import android.content.Context;
+import android.support.annotation.DrawableRes;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,14 +28,21 @@ public class XToast{
 
     private Toastc toast;
     private TextView textView;
+    private ImageView icon;
 
     public XToast(Context context) {
         View view = LayoutInflater.from(context).inflate(R.layout.toast_music_layout,null);
         toast = new Toastc(context,view,Gravity.CENTER, Toast.LENGTH_LONG);
         textView = (TextView) view.findViewById(R.id.textView);
+        icon = (ImageView) view.findViewById(R.id.icon);
     }
 
-    public XToast setVoice(int a) {
+    public XToast setIcon(@DrawableRes int res) {
+        icon.setBackgroundResource(res);
+        return this;
+    }
+
+    public XToast setTxt(int a) {
         if (a<=0) {
             textView.setText("0%");
         }

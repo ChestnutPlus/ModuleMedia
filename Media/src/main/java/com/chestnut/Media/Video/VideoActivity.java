@@ -4,6 +4,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.GestureDetector;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -16,7 +17,9 @@ import android.widget.TextView;
 import android.widget.VideoView;
 
 import com.chestnut.Common.utils.BarUtils;
+import com.chestnut.Common.utils.ConvertUtils;
 import com.chestnut.Common.utils.LogUtils;
+import com.chestnut.Common.utils.ScreenUtils;
 import com.chestnut.Media.R;
 
 import java.util.concurrent.TimeUnit;
@@ -50,7 +53,7 @@ public class VideoActivity extends AppCompatActivity {
     private boolean OpenLog = true;
     private String TAG = "VideoActivity";
 
-    private XToast xToastMusic;
+    private XToast xToast;
     private ImageView playIcon;
     private VideoView videoView;
     private SeekBar seekBar;
@@ -67,6 +70,7 @@ public class VideoActivity extends AppCompatActivity {
     private int nowProgress = 0;
     private boolean isError = false;
     private AudioMngHelper audioMngHelper;
+    private GestureDetector gestureDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,8 +89,9 @@ public class VideoActivity extends AppCompatActivity {
         top_view = findViewById(R.id.top_view);
         View layout_view = findViewById(R.id.layout_view);
         progressBarLoading = (ProgressBar) findViewById(R.id.progress_loading);
-        xToastMusic = new XToast(this);
+        xToast = new XToast(this);
         audioMngHelper = new AudioMngHelper(this);
+        gestureDetector = new GestureDetector(this,simpleOnGestureListener);
 
         //退出按钮
         findViewById(R.id.img_close).setOnClickListener(new View.OnClickListener() {
@@ -107,21 +112,8 @@ public class VideoActivity extends AppCompatActivity {
         layout_view.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
-                if (isError)
-                    return false;
-                if (bottom_view.getVisibility()==View.VISIBLE) {
-                    bottom_view.setVisibility(View.INVISIBLE);
-                    top_view.setVisibility(View.INVISIBLE);
-                }
-                else {
-                    if (videoView.isPlaying()) {
-                        startNewDelayHideControlView();
-                    }
-                    else {
-                        showControlView();
-                    }
-                }
-                return false;
+                gestureDetector.onTouchEvent(motionEvent);
+                return true;
             }
         });
 
@@ -394,6 +386,7 @@ public class VideoActivity extends AppCompatActivity {
         super.onRestart();
         LogUtils.e(OpenLog,TAG,"onRestart-info:"+onPauseStorePlaying+","+onPauseStoreProgress);
         if (videoView!=null) {
+            videoView.setOnPreparedListener(onPreparedListener);
             videoView.seekTo(onPauseStoreProgress);
             if (onPauseStorePlaying) {
                 videoView.start();
@@ -405,7 +398,6 @@ public class VideoActivity extends AppCompatActivity {
             else {
                 playIcon.setImageResource(R.drawable.media_play);
             }
-            videoView.setOnPreparedListener(onPreparedListener);
         }
     }
 
@@ -420,14 +412,74 @@ public class VideoActivity extends AppCompatActivity {
         int a;
         switch (keyCode) {
             case KeyEvent.KEYCODE_VOLUME_DOWN:
-                xToastMusic.setVoice(audioMngHelper.subVoice100()).show();
+                xToast.setIcon(R.drawable.media_music).setTxt(audioMngHelper.setVoiceStep100(2).subVoice100()).show();
                 return true;
             case KeyEvent.KEYCODE_VOLUME_UP:
-                xToastMusic.setVoice(audioMngHelper.addVoice100()).show();
+                xToast.setIcon(R.drawable.media_music).setTxt(audioMngHelper.setVoiceStep100(2).addVoice100()).show();
                 return true;
             case KeyEvent.KEYCODE_VOLUME_MUTE:
                 break;
         }
         return super.onKeyDown(keyCode, event);
     }
+
+    /**
+     * 屏幕左右活动，上下滑动监听
+     */
+    private int temp_y = 0;
+    private GestureDetector.SimpleOnGestureListener simpleOnGestureListener = new GestureDetector.SimpleOnGestureListener() {
+        //单击显示UI，进度条
+        @Override
+        public boolean onDown(MotionEvent e) {
+            temp_y = 0;
+            if (isError)
+                return false;
+            if (bottom_view.getVisibility()==View.VISIBLE) {
+                bottom_view.setVisibility(View.INVISIBLE);
+                top_view.setVisibility(View.INVISIBLE);
+            }
+            else {
+                if (videoView.isPlaying()) {
+                    startNewDelayHideControlView();
+                }
+                else {
+                    showControlView();
+                }
+            }
+            return super.onDown(e);
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            int y = (int) Math.ceil(distanceY);
+            int x = (int) Math.ceil(distanceX);
+            temp_y+=Math.abs(y);
+            //在屏幕的上下正负60dp内才可以调节。
+            if (e2.getRawY()>ConvertUtils.dp2px(VideoActivity.this,60)
+                    && e2.getRawY()<ScreenUtils.getScreenHeight_PX(VideoActivity.this)-ConvertUtils.dp2px(VideoActivity.this,60)
+                    && temp_y>15
+                    ) {
+                temp_y = 0;
+                //调节音量
+                if (e1.getRawX()>= ScreenUtils.getScreenWidth_PX(VideoActivity.this)/2) {
+                    xToast.setIcon(R.drawable.media_music);
+                    if (distanceY>0)
+                        xToast.setTxt(audioMngHelper.setVoice100(audioMngHelper.setVoiceStep100(1).addVoice100())).show();
+                    else
+                        xToast.setTxt(audioMngHelper.setVoice100(audioMngHelper.setVoiceStep100(1).subVoice100())).show();
+                }
+                //调节亮度
+                else {
+                    xToast.setIcon(R.drawable.media_light);
+                    if (distanceY>0)
+                        xToast.setTxt(LightUtils.addLight100(VideoActivity.this)).show();
+                    else
+                        xToast.setTxt(LightUtils.subLight100(VideoActivity.this)).show();
+                }
+            }
+            LogUtils.e(OpenLog,TAG,"e1:"+e1.getRawX()+","+e1.getRawY()+" e2:"+e2.getRawX()+","+e2.getRawY()+",distanceX:"+distanceX+",distanceY:"+distanceY+",x:"+x+",y:"+y+",temp_y:"+temp_y);
+            LogUtils.e(OpenLog,TAG,"light:"+LightUtils.getAppLight100(VideoActivity.this));
+            return super.onScroll(e1, e2, distanceX, distanceY);
+        }
+    };
 }
