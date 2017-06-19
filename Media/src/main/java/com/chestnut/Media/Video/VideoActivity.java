@@ -192,6 +192,7 @@ public class VideoActivity extends AppCompatActivity {
                 if(what == MediaPlayer.MEDIA_INFO_BUFFERING_START){
                     progressBarLoading.setVisibility(View.VISIBLE);
                     showControlView();
+                    LogUtils.i(OpenLog,TAG,"");
                 }else if(what == MediaPlayer.MEDIA_INFO_BUFFERING_END){
                     //此接口每次回调完START就回调END,若不加上判断就会出现缓冲图标一闪一闪的卡顿现象
                     if(mp.isPlaying()){
