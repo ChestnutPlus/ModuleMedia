@@ -210,6 +210,12 @@ public class VideoActivity extends AppCompatActivity {
                 if (isError)
                     return;
                 if (isTouchSeekBar) {
+                    if (i-nowProgress>0) {
+                        xToast.setIcon(R.drawable.media_to_right).setTxt(TimeUtils.toMediaTime(i)).show();
+                    }
+                    else {
+                        xToast.setIcon(R.drawable.media_to_left).setTxt(TimeUtils.toMediaTime(i)).show();
+                    }
                     nowProgress = i;
                     playedTime.setText(TimeUtils.toMediaTime(i));
                 }
@@ -427,6 +433,7 @@ public class VideoActivity extends AppCompatActivity {
      * 屏幕左右活动，上下滑动监听
      */
     private int temp_y = 0;
+    private int temp_x = 0;
     private GestureDetector.SimpleOnGestureListener simpleOnGestureListener = new GestureDetector.SimpleOnGestureListener() {
         //单击显示UI，进度条
         @Override
@@ -451,34 +458,64 @@ public class VideoActivity extends AppCompatActivity {
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            if (isError)
+                return super.onScroll(e1, e2, distanceX, distanceY);
+
             int y = (int) Math.ceil(distanceY);
             int x = (int) Math.ceil(distanceX);
-            temp_y+=Math.abs(y);
-            //在屏幕的上下正负60dp内才可以调节。
-            if (e2.getRawY()>ConvertUtils.dp2px(VideoActivity.this,60)
-                    && e2.getRawY()<ScreenUtils.getScreenHeight_PX(VideoActivity.this)-ConvertUtils.dp2px(VideoActivity.this,60)
-                    && temp_y>15
-                    ) {
+
+            //大于10px的时候，默认是快进/快退
+            if (Math.abs(distanceX)>10) {
                 temp_y = 0;
-                //调节音量
-                if (e1.getRawX()>= ScreenUtils.getScreenWidth_PX(VideoActivity.this)/2) {
-                    xToast.setIcon(R.drawable.media_music);
-                    if (distanceY>0)
-                        xToast.setTxt(audioMngHelper.setVoice100(audioMngHelper.setVoiceStep100(1).addVoice100())).show();
-                    else
-                        xToast.setTxt(audioMngHelper.setVoice100(audioMngHelper.setVoiceStep100(1).subVoice100())).show();
-                }
-                //调节亮度
-                else {
-                    xToast.setIcon(R.drawable.media_light);
-                    if (distanceY>0)
-                        xToast.setTxt(LightUtils.addLight100(VideoActivity.this)).show();
-                    else
-                        xToast.setTxt(LightUtils.subLight100(VideoActivity.this)).show();
+                temp_x += Math.abs(x);
+                //为一次调节
+                if (temp_x>15) {
+                    temp_x = 0;
+                    //快进
+                    if (distanceX<0) {
+                        int a = videoView.getCurrentPosition() + 1000;
+                        a = a >= videoView.getDuration() ? videoView.getDuration() : a;
+                        videoView.seekTo(a);
+                        xToast.setIcon(R.drawable.media_to_right).setTxt(TimeUtils.toMediaTime((int) (a*0.001))).show();
+                        seekBar.setProgress(a/1000);
+                    }
+                    //快退
+                    else {
+                        int a = videoView.getCurrentPosition() - 1000;
+                        a = a <= 0 ? 0 : a;
+                        videoView.seekTo(a);
+                        xToast.setIcon(R.drawable.media_to_left).setTxt(TimeUtils.toMediaTime((int) (a*0.001))).show();
+                        seekBar.setProgress(a/1000);
+                    }
                 }
             }
-            LogUtils.e(OpenLog,TAG,"e1:"+e1.getRawX()+","+e1.getRawY()+" e2:"+e2.getRawX()+","+e2.getRawY()+",distanceX:"+distanceX+",distanceY:"+distanceY+",x:"+x+",y:"+y+",temp_y:"+temp_y);
-            LogUtils.e(OpenLog,TAG,"light:"+LightUtils.getAppLight100(VideoActivity.this));
+            else if (Math.abs(distanceY) > 10) {
+                temp_x = 0;
+                temp_y += Math.abs(y);
+                //在屏幕的上下正负60dp内才可以调节。
+                if (e2.getRawY() > ConvertUtils.dp2px(VideoActivity.this, 60)
+                        && e2.getRawY() < ScreenUtils.getScreenHeight_PX(VideoActivity.this) - ConvertUtils.dp2px(VideoActivity.this, 60)
+                        && temp_y > 15
+                        ) {
+                    temp_y = 0;
+                    //调节音量
+                    if (e1.getRawX() >= ScreenUtils.getScreenWidth_PX(VideoActivity.this) / 2) {
+                        xToast.setIcon(R.drawable.media_music);
+                        if (distanceY > 0)
+                            xToast.setTxt(audioMngHelper.setVoice100(audioMngHelper.setVoiceStep100(1).addVoice100())).show();
+                        else
+                            xToast.setTxt(audioMngHelper.setVoice100(audioMngHelper.setVoiceStep100(1).subVoice100())).show();
+                    }
+                    //调节亮度
+                    else {
+                        xToast.setIcon(R.drawable.media_light);
+                        if (distanceY > 0)
+                            xToast.setTxt(LightUtils.addLight100(VideoActivity.this)).show();
+                        else
+                            xToast.setTxt(LightUtils.subLight100(VideoActivity.this)).show();
+                    }
+                }
+            }
             return super.onScroll(e1, e2, distanceX, distanceY);
         }
     };

@@ -2,6 +2,7 @@ package com.chestnut.Media.Video;
 
 import android.content.Context;
 import android.support.annotation.DrawableRes;
+import android.support.annotation.NonNull;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -52,6 +53,11 @@ public class XToast{
         else {
             textView.setText(a+"%");
         }
+        return this;
+    }
+
+    public XToast setTxt(@NonNull String s) {
+        textView.setText(s);
         return this;
     }
 
