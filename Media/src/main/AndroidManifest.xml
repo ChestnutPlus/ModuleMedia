@@ -10,7 +10,9 @@
             android:name=".Video.VideoActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:theme="@style/MediaModuleTheme" />
-        <activity android:name=".Music.MusicActivity"></activity>
+        <activity android:name=".Music.MusicActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:theme="@style/MediaModuleTheme" />
     </application>
 
 </manifest>
