@@ -67,6 +67,7 @@ public class VideoActivity extends AppCompatActivity {
     private Subscription updatePositionTimerSubscription;
     private Subscription delayHideBottomViewSubscription;
     private boolean isTouchSeekBar = false;
+    private boolean isEnd = true;
     private int nowProgress = 0;
     private boolean isError = false;
     private AudioMngHelper audioMngHelper;
@@ -153,6 +154,8 @@ public class VideoActivity extends AppCompatActivity {
                 playedTime.setText("00:00");
                 stopUpdatePositionTimer();
                 showControlView();
+                progressBarLoading.setVisibility(View.INVISIBLE);
+                isEnd = true;
             }
         });
 
@@ -171,6 +174,7 @@ public class VideoActivity extends AppCompatActivity {
                 playedTime.setText(TimeUtils.toMediaTime(videoView.getCurrentPosition()/1000));
                 startUpdatePositionTimer();
                 startNewDelayHideControlView();
+                isEnd = false;
 //                LogUtils.e(OpenLog,TAG,"setOnPreparedListener");
             }
         };
@@ -190,13 +194,15 @@ public class VideoActivity extends AppCompatActivity {
         videoView.setOnInfoListener(new MediaPlayer.OnInfoListener() {
             public boolean onInfo(MediaPlayer mp, int what, int extra) {
                 if(what == MediaPlayer.MEDIA_INFO_BUFFERING_START){
-                    progressBarLoading.setVisibility(View.VISIBLE);
+                    if (!isEnd)
+                        progressBarLoading.setVisibility(View.VISIBLE);
                     showControlView();
                     LogUtils.i(OpenLog,TAG,"");
                 }else if(what == MediaPlayer.MEDIA_INFO_BUFFERING_END){
                     //此接口每次回调完START就回调END,若不加上判断就会出现缓冲图标一闪一闪的卡顿现象
                     if(mp.isPlaying()){
-                        progressBarLoading.setVisibility(View.INVISIBLE);
+                        if (!isEnd)
+                            progressBarLoading.setVisibility(View.INVISIBLE);
                         startNewDelayHideControlView();
                     }
                 }

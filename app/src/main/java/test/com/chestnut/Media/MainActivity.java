@@ -23,8 +23,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this,VideoActivity.class);
-                intent.putExtra(VideoActivity.VIDEO_TITLE,"南山南");
-                intent.putExtra(VideoActivity.VIDEO_URL, Environment.getExternalStorageDirectory().getPath() + "/1.mp4");
+                intent.putExtra(VideoActivity.VIDEO_TITLE,"FLV视频");
+                intent.putExtra(VideoActivity.VIDEO_URL, Environment.getExternalStorageDirectory().getPath() + "/44.flv");
                 intent.putExtra(VideoActivity.VIDEO_TYPE,VideoActivity.TYPE_LOCAL);
                 startActivity(intent);
             }
@@ -35,13 +35,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this,VideoActivity.class);
-                intent.putExtra(VideoActivity.VIDEO_TITLE,"南山南");
-                intent.putExtra(VideoActivity.VIDEO_URL,"http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4");
+                intent.putExtra(VideoActivity.VIDEO_TITLE,"南山南Online");
+                intent.putExtra(VideoActivity.VIDEO_URL,"http://1253915382.vod2.myqcloud.com/eda2040evodtransgzp1253915382/dc1a5e459031868222992520453/f0.f20.mp4");
                 intent.putExtra(VideoActivity.VIDEO_TYPE,VideoActivity.TYPE_ONLINE);
                 startActivity(intent);
             }
         });
-
-
     }
 }
