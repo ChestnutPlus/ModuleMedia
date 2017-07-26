@@ -22,6 +22,6 @@ dependencies {
     // Core Base Library
     // The Common Library
     compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.github.ChestnutPlus:ModulesCommon:1.0.4'
+    compile 'com.github.ChestnutPlus:ModulesCommon:1.1.0'
     compile 'com.github.ChestnutPlus:ModulesRes:1.0.1'
 }

@@ -23,8 +23,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this,VideoActivity.class);
-                intent.putExtra(VideoActivity.VIDEO_TITLE,"FLV视频");
-                intent.putExtra(VideoActivity.VIDEO_URL, Environment.getExternalStorageDirectory().getPath() + "/44.flv");
+                intent.putExtra(VideoActivity.VIDEO_TITLE,"Joe_Grace");
+//                intent.putExtra(VideoActivity.VIDEO_URL, Environment.getExternalStorageDirectory().getPath() + "/44.flv");
+                intent.putExtra(VideoActivity.VIDEO_URL, Environment.getExternalStorageDirectory().getPath() + "/guoge.mkv");
                 intent.putExtra(VideoActivity.VIDEO_TYPE,VideoActivity.TYPE_LOCAL);
                 startActivity(intent);
             }
