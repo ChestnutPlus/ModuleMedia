@@ -16,18 +16,24 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.VideoView;
 
-import com.chestnut.Common.utils.BarUtils;
-import com.chestnut.Common.utils.ConvertUtils;
-import com.chestnut.Common.utils.LogUtils;
-import com.chestnut.Common.utils.ScreenUtils;
 import com.chestnut.Media.R;
+import com.chestnut.common.manager.UtilsManager;
+import com.chestnut.common.utils.BarUtils;
+import com.chestnut.common.utils.ConvertUtils;
+import com.chestnut.common.utils.EncryptUtils;
+import com.chestnut.common.utils.LogUtils;
+import com.chestnut.common.utils.ScreenUtils;
+import com.chestnut.common.utils.SimpleDownloadUtils;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import rx.Observable;
-import rx.Subscription;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * <pre>
@@ -47,13 +53,14 @@ public class VideoActivity extends AppCompatActivity {
     public static final String VIDEO_URL = "VIDEO_URL";
     public static final String VIDEO_TITLE = "VIDEO_TITLE";
     public static final String VIDEO_TYPE = "VIDEO_TYPE";
+    public static boolean IS_PLAY_AFTER_DOWNLOAD = true;
     public static final int TYPE_ONLINE = -99;
     public static final int TYPE_LOCAL = -111;
 
     private boolean OpenLog = true;
     private String TAG = "VideoActivity";
 
-    private XToast xToast;
+    private MyToast xToast;
     private ImageView playIcon;
     private VideoView videoView;
     private SeekBar seekBar;
@@ -64,8 +71,8 @@ public class VideoActivity extends AppCompatActivity {
     private ProgressBar progressBarLoading;
     private MediaPlayer.OnPreparedListener onPreparedListener;
 
-    private Subscription updatePositionTimerSubscription;
-    private Subscription delayHideBottomViewSubscription;
+    private Disposable updatePositionTimerSubscription;
+    private Disposable delayHideBottomViewSubscription;
     private boolean isTouchSeekBar = false;
     private boolean isEnd = true;
     private int nowProgress = 0;
@@ -90,7 +97,7 @@ public class VideoActivity extends AppCompatActivity {
         top_view = findViewById(R.id.top_view);
         View layout_view = findViewById(R.id.layout_view);
         progressBarLoading = (ProgressBar) findViewById(R.id.progress_loading);
-        xToast = new XToast(this);
+        xToast = new MyToast(this);
         audioMngHelper = new AudioMngHelper(this);
         gestureDetector = new GestureDetector(this,simpleOnGestureListener);
 
@@ -101,10 +108,10 @@ public class VideoActivity extends AppCompatActivity {
                 if (videoView.isPlaying())
                     videoView.pause();
                 videoView = null;
-                if (updatePositionTimerSubscription!=null && !updatePositionTimerSubscription.isUnsubscribed())
-                    updatePositionTimerSubscription.unsubscribe();
-                if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isUnsubscribed())
-                    delayHideBottomViewSubscription.unsubscribe();
+                if (updatePositionTimerSubscription!=null && !updatePositionTimerSubscription.isDisposed())
+                    updatePositionTimerSubscription.dispose();
+                if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isDisposed())
+                    delayHideBottomViewSubscription.dispose();
                 finish();
             }
         });
@@ -190,26 +197,6 @@ public class VideoActivity extends AppCompatActivity {
             }
         });
 
-        //缓冲监听
-        videoView.setOnInfoListener(new MediaPlayer.OnInfoListener() {
-            public boolean onInfo(MediaPlayer mp, int what, int extra) {
-                if(what == MediaPlayer.MEDIA_INFO_BUFFERING_START){
-                    if (!isEnd)
-                        progressBarLoading.setVisibility(View.VISIBLE);
-                    showControlView();
-                    LogUtils.i(OpenLog,TAG,"");
-                }else if(what == MediaPlayer.MEDIA_INFO_BUFFERING_END){
-                    //此接口每次回调完START就回调END,若不加上判断就会出现缓冲图标一闪一闪的卡顿现象
-                    if(mp.isPlaying()){
-                        if (!isEnd)
-                            progressBarLoading.setVisibility(View.INVISIBLE);
-                        startNewDelayHideControlView();
-                    }
-                }
-                return true;
-            }
-        });
-
         //进度条
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -254,16 +241,68 @@ public class VideoActivity extends AppCompatActivity {
                 titleView.setText(title);
             }
 
-            String url = getIntent().getExtras().getString(VIDEO_URL, null);
+            final String url = getIntent().getExtras().getString(VIDEO_URL, null);
+            LogUtils.i(OpenLog,TAG,"URL:"+url);
             int type = getIntent().getExtras().getInt(VIDEO_TYPE,-1);
             if (url != null && url.length() != 0 && (type==TYPE_ONLINE || type==TYPE_LOCAL)) {
                 if (type==TYPE_LOCAL) {
-                    videoView.setVideoPath(url);
+//                    videoView.setVideoPath(url);
+                    File file = new File(url);
+                    videoView.setVideoPath(file.getPath());
                     progressBarLoading.setVisibility(View.GONE);
+                    LogUtils.i(OpenLog,TAG,"local:1");
                 }
                 else {
-                    videoView.setVideoURI(Uri.parse(url));
-                    progressBarLoading.setVisibility(View.VISIBLE);
+                    //是否需要先下载然后播放
+                    if (IS_PLAY_AFTER_DOWNLOAD) {
+                        //取URL的MD5，映射到本地的文件
+                        final String filePath = UtilsManager.getCachePath() + "/" + EncryptUtils.encryptMD5ToString(url) + ".mp4";
+                        File file = new File(filePath);
+                        if (file.exists()) {
+                            videoView.setVideoPath(url);
+                            progressBarLoading.setVisibility(View.GONE);
+                            LogUtils.i(OpenLog,TAG,"local:2");
+                        }
+                        else {
+                            try {
+                                LogUtils.i(OpenLog,TAG,filePath+",create:"+file.createNewFile());
+                                SimpleDownloadUtils.downLoadRx(url, filePath)
+                                        .subscribeOn(Schedulers.io())
+                                        .observeOn(AndroidSchedulers.mainThread())
+                                        .subscribe(new Consumer<Boolean>() {
+                                            @Override
+                                            public void accept(Boolean aBoolean) throws Exception {
+                                                if (aBoolean != null && aBoolean) {
+                                                    videoView.setVideoPath(filePath);
+                                                    progressBarLoading.setVisibility(View.GONE);
+                                                    LogUtils.i(OpenLog,TAG,"online:1");
+                                                } else {
+                                                    setCacheListenerAndPlay();
+                                                    videoView.setVideoURI(Uri.parse(url));
+                                                    progressBarLoading.setVisibility(View.VISIBLE);
+                                                    LogUtils.i(OpenLog,TAG,"online:2");
+                                                }
+                                            }
+                                        }, new Consumer<Throwable>() {
+                                            @Override
+                                            public void accept(Throwable throwable) throws Exception {
+                                                setCacheListenerAndPlay();
+                                                videoView.setVideoURI(Uri.parse(url));
+                                                progressBarLoading.setVisibility(View.VISIBLE);
+                                                LogUtils.i(OpenLog,TAG,"online:3");
+                                            }
+                                        });
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                    else {
+                        LogUtils.i(OpenLog,TAG,"online:4");
+                        setCacheListenerAndPlay();
+                        videoView.setVideoURI(Uri.parse(url));
+                        progressBarLoading.setVisibility(View.VISIBLE);
+                    }
                 }
                 videoView.start();
                 videoView.requestFocus();
@@ -278,6 +317,28 @@ public class VideoActivity extends AppCompatActivity {
         }
     }
 
+    private void setCacheListenerAndPlay() {
+        //缓冲监听
+        videoView.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+            public boolean onInfo(MediaPlayer mp, int what, int extra) {
+                if(what == MediaPlayer.MEDIA_INFO_BUFFERING_START){
+                    if (!isEnd)
+                        progressBarLoading.setVisibility(View.VISIBLE);
+                    showControlView();
+                    LogUtils.i(OpenLog,TAG,"");
+                }else if(what == MediaPlayer.MEDIA_INFO_BUFFERING_END){
+                    //此接口每次回调完START就回调END,若不加上判断就会出现缓冲图标一闪一闪的卡顿现象
+                    if(mp.isPlaying()){
+                        if (!isEnd)
+                            progressBarLoading.setVisibility(View.INVISIBLE);
+                        startNewDelayHideControlView();
+                    }
+                }
+                return true;
+            }
+        });
+    }
+
     /**
      * 开启更新进度条倒计时
      */
@@ -286,9 +347,9 @@ public class VideoActivity extends AppCompatActivity {
             return;
         updatePositionTimerSubscription = Observable.interval(1, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Action1<Long>() {
+                .subscribe(new Consumer<Long>() {
                     @Override
-                    public void call(Long aLong) {
+                    public void accept(Long aLong) throws Exception {
                         if (!isTouchSeekBar && videoView!=null) {
                             seekBar.setProgress(videoView.getCurrentPosition() / 1000);
                             if (videoView.getCurrentPosition()/1000>videoView.getDuration()/1000)
@@ -307,8 +368,8 @@ public class VideoActivity extends AppCompatActivity {
     private void stopUpdatePositionTimer() {
         if (isError)
             return;
-        if (updatePositionTimerSubscription!=null && !updatePositionTimerSubscription.isUnsubscribed())
-            updatePositionTimerSubscription.unsubscribe();
+        if (updatePositionTimerSubscription!=null && !updatePositionTimerSubscription.isDisposed())
+            updatePositionTimerSubscription.dispose();
         updatePositionTimerSubscription = null;
     }
 
@@ -320,15 +381,15 @@ public class VideoActivity extends AppCompatActivity {
             return;
         delayHideBottomViewSubscription = Observable.interval(3, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Action1<Long>() {
+                .subscribe(new Consumer<Long>() {
                     @Override
-                    public void call(Long aLong) {
+                    public void accept(Long aLong) throws Exception {
                         if (!isTouchSeekBar) {
                             bottom_view.setVisibility(View.INVISIBLE);
                             top_view.setVisibility(View.INVISIBLE);
                         }
-                        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isUnsubscribed())
-                            delayHideBottomViewSubscription.unsubscribe();
+                        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isDisposed())
+                            delayHideBottomViewSubscription.dispose();
                         delayHideBottomViewSubscription = null;
                     }
                 });
@@ -342,8 +403,8 @@ public class VideoActivity extends AppCompatActivity {
             return;
         bottom_view.setVisibility(View.VISIBLE);
         top_view.setVisibility(View.VISIBLE);
-        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isUnsubscribed())
-            delayHideBottomViewSubscription.unsubscribe();
+        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isDisposed())
+            delayHideBottomViewSubscription.dispose();
         delayHideBottomViewSubscription = null;
         delayHideControlView();
     }
@@ -356,8 +417,8 @@ public class VideoActivity extends AppCompatActivity {
             return;
         bottom_view.setVisibility(View.VISIBLE);
         top_view.setVisibility(View.VISIBLE);
-        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isUnsubscribed())
-            delayHideBottomViewSubscription.unsubscribe();
+        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isDisposed())
+            delayHideBottomViewSubscription.dispose();
         delayHideBottomViewSubscription = null;
     }
 
@@ -366,10 +427,10 @@ public class VideoActivity extends AppCompatActivity {
         if (videoView.isPlaying())
             videoView.pause();
         videoView = null;
-        if (updatePositionTimerSubscription!=null && !updatePositionTimerSubscription.isUnsubscribed())
-            updatePositionTimerSubscription.unsubscribe();
-        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isUnsubscribed())
-            delayHideBottomViewSubscription.unsubscribe();
+        if (updatePositionTimerSubscription!=null && !updatePositionTimerSubscription.isDisposed())
+            updatePositionTimerSubscription.dispose();
+        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isDisposed())
+            delayHideBottomViewSubscription.dispose();
         finish();
     }
 
@@ -387,10 +448,10 @@ public class VideoActivity extends AppCompatActivity {
             videoView.pause();
             videoView.setOnPreparedListener(null);
         }
-        if (updatePositionTimerSubscription!=null && !updatePositionTimerSubscription.isUnsubscribed())
-            updatePositionTimerSubscription.unsubscribe();
-        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isUnsubscribed())
-            delayHideBottomViewSubscription.unsubscribe();
+        if (updatePositionTimerSubscription!=null && !updatePositionTimerSubscription.isDisposed())
+            updatePositionTimerSubscription.dispose();
+        if (delayHideBottomViewSubscription!=null && !delayHideBottomViewSubscription.isDisposed())
+            delayHideBottomViewSubscription.dispose();
         LogUtils.e(OpenLog,TAG,"onPause-info:"+onPauseStorePlaying+","+onPauseStoreProgress);
     }
 

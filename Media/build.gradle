@@ -16,12 +16,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
     // Core Base Library
     // The Common Library
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.github.ChestnutPlus:ModulesCommon:1.1.0'
-    compile 'com.github.ChestnutPlus:ModulesRes:1.0.1'
+    compile 'com.android.support:appcompat-v7:25.4.0'
+    compile 'com.github.ChestnutPlus:ModulesCommon:2.2.0'
 }

@@ -22,4 +22,14 @@
         android:layout_below="@+id/button"
         android:layout_marginTop="11dp"
         android:text="视频-网络" />
+
+    <Button
+        android:id="@+id/button3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/button"
+        android:layout_below="@+id/button2"
+        android:layout_marginTop="11dp"
+        android:text="音频" />
+
 </RelativeLayout>

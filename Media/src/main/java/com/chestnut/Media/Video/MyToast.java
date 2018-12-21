@@ -10,8 +10,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.chestnut.Common.ui.Toastc;
 import com.chestnut.Media.R;
+import com.chestnut.common.ui.XToast;
 
 /**
  * <pre>
@@ -25,25 +25,25 @@ import com.chestnut.Media.R;
  * </pre>
  */
 
-public class XToast{
+public class MyToast {
 
-    private Toastc toast;
+    private XToast toast;
     private TextView textView;
     private ImageView icon;
 
-    public XToast(Context context) {
+    public MyToast(Context context) {
         View view = LayoutInflater.from(context).inflate(R.layout.toast_music_layout,null);
-        toast = new Toastc(context,view,Gravity.CENTER, Toast.LENGTH_LONG);
+        toast = new XToast(context,view,Gravity.CENTER, Toast.LENGTH_LONG);
         textView = (TextView) view.findViewById(R.id.textView);
         icon = (ImageView) view.findViewById(R.id.icon);
     }
 
-    public XToast setIcon(@DrawableRes int res) {
+    public MyToast setIcon(@DrawableRes int res) {
         icon.setBackgroundResource(res);
         return this;
     }
 
-    public XToast setTxt(int a) {
+    public MyToast setTxt(int a) {
         if (a<=0) {
             textView.setText("0%");
         }
@@ -56,7 +56,7 @@ public class XToast{
         return this;
     }
 
-    public XToast setTxt(@NonNull String s) {
+    public MyToast setTxt(@NonNull String s) {
         textView.setText(s);
         return this;
     }

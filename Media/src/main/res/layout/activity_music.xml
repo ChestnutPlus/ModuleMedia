@@ -12,7 +12,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <ImageView
-            android:background="@drawable/mr_bg_transparent_to_gray"
             android:focusable="true"
             android:clickable="true"
             android:id="@+id/img_pause"
