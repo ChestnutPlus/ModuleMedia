@@ -1,30 +1,33 @@
 apply plugin: 'com.android.library'
 
-android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.1"
+def build = rootProject.ext.build
 
+android {
+    compileSdkVersion build.compileSdkVersion
     defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 25
+        minSdkVersion build.minSdkVersion
+        targetSdkVersion build.targetSdkVersion
         versionCode 1
-        versionName "1.0"
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
+        resConfigs "zh"
+        versionName "1.0.0"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    repositories {
+        flatDir {
+            dirs 'libs'
+        }
     }
 }
 
 dependencies {
     // Core Base Library
     // The Common Library
-    compile 'com.android.support:appcompat-v7:25.4.0'
-    compile 'com.github.ChestnutPlus:ModulesCommon:2.2.0'
+    api 'com.github.ChestnutPlus:ModulesCommon:2.2.0'
+    /*  超级播放器：腾讯
+    * */
+    compile 'com.github.ctiao:DanmakuFlameMaster:0.5.3'
+    compile(name: 'lib_tcsuperplayer', ext: 'aar')
 }

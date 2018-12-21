@@ -1,12 +1,13 @@
 apply plugin: 'com.android.application'
 
+def build = rootProject.ext.build
+
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.1"
+    compileSdkVersion build.compileSdkVersion
     defaultConfig {
         applicationId "test.com.chestnut.Media"
-        minSdkVersion 19
-        targetSdkVersion 25
+        minSdkVersion build.minSdkVersion
+        targetSdkVersion build.targetSdkVersion
         versionCode 1
         versionName "1.0"
     }
@@ -23,6 +24,5 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:25.4.0'
-    compile project(path: ':Media')
+    implementation project(path: ':Media')
 }
