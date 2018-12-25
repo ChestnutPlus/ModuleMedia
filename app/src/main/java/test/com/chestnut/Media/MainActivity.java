@@ -39,8 +39,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this,VideoActivity.class);
-                intent.putExtra(VideoActivity.VIDEO_TITLE,"南山南Online");
-                intent.putExtra(VideoActivity.VIDEO_URL,"http://1253915382.vod2.myqcloud.com/eda2040evodtransgzp1253915382/dc1a5e459031868222992520453/f0.f20.mp4");
+                intent.putExtra(VideoActivity.VIDEO_TITLE,"Yellow");
+                intent.putExtra(VideoActivity.VIDEO_URL,"http://1258339144.vod2.myqcloud.com/1b77e3cavodcq1258339144/f3ae580c5285890783708931103/4ayzIpIJ77gA.mp4");
                 intent.putExtra(VideoActivity.VIDEO_TYPE,VideoActivity.TYPE_ONLINE);
                 startActivity(intent);
             }

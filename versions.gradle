@@ -5,7 +5,7 @@
 def build = [:]
 build.androidGradlePlugin = "com.android.tools.build:gradle:3.2.1"
 build.compileSdkVersion = 28
-build.minSdkVersion = 20
+build.minSdkVersion = 19
 build.targetSdkVersion = 28
 ext.build = build
 

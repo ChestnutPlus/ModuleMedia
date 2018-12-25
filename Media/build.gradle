@@ -15,19 +15,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    repositories {
-        flatDir {
-            dirs 'libs'
-        }
-    }
 }
 
 dependencies {
     // Core Base Library
     // The Common Library
     api 'com.github.ChestnutPlus:ModulesCommon:2.2.0'
-    /*  超级播放器：腾讯
-    * */
-    compile 'com.github.ctiao:DanmakuFlameMaster:0.5.3'
-    compile(name: 'lib_tcsuperplayer', ext: 'aar')
 }
