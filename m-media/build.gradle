@@ -1,28 +1,25 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
 def build = rootProject.ext.build
 
 android {
     compileSdkVersion build.compileSdkVersion
     defaultConfig {
-        applicationId "test.com.chestnut.Media"
         minSdkVersion build.minSdkVersion
         targetSdkVersion build.targetSdkVersion
         versionCode 1
-        versionName "1.0"
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
+        resConfigs "zh"
+        versionName "1.0.0"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    //在资源名称前加上前缀名，避免资源冲突
+    resourcePrefix 'media_'
 }
 
 dependencies {
-    implementation project(path: ':m-media')
+    api 'com.android.support:appcompat-v7:25.4.0'
+    implementation files('libs/pldroid-player-2.1.6.jar')
 }
