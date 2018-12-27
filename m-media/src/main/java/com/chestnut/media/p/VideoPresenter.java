@@ -90,6 +90,7 @@ public class VideoPresenter implements VideoContract.P,Runnable {
             @Override
             public boolean onError(int i) {
                 Log.i(TAG,"err:"+i);
+                v.showNotFoundVideo();
                 return false;
             }
         });
@@ -140,16 +141,26 @@ public class VideoPresenter implements VideoContract.P,Runnable {
 
     @Override
     public void onViewDownTouch() {
-        handler.removeCallbacks(hideRunnable);
         if (!isShowControlView) {
             v.showControlView();
-            handler.postDelayed(hideRunnable,4000);
-            isShowControlView = true;
+            startHideControlRunnable();
         }
         else {
             v.hideControlView();
-            isShowControlView = false;
+            stopHideControlRunnable();
         }
+    }
+
+    @Override
+    public void stopHideControlRunnable() {
+        handler.removeCallbacks(hideRunnable);
+        isShowControlView = false;
+    }
+
+    @Override
+    public void startHideControlRunnable() {
+        handler.postDelayed(hideRunnable,4000);
+        isShowControlView = true;
     }
 
     @Override
@@ -201,9 +212,8 @@ public class VideoPresenter implements VideoContract.P,Runnable {
     }
 
     private void resetControlView() {
-        handler.removeCallbacks(hideRunnable);
+        stopHideControlRunnable();
         v.showControlView();
-        handler.postDelayed(hideRunnable,4000);
-        isShowControlView = true;
+        startHideControlRunnable();
     }
 }

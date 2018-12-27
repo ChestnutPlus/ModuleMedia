@@ -22,10 +22,10 @@ import com.chestnut.media.contract.MediaManager;
 import com.chestnut.media.contract.VideoBuilder;
 import com.chestnut.media.contract.VideoContract;
 import com.chestnut.media.p.VideoPresenter;
-import com.chestnut.media.utils.ScreenUtils;
-import com.chestnut.media.utils.TimeUtils;
 import com.chestnut.media.utils.AudioMngHelper;
 import com.chestnut.media.utils.LightUtils;
+import com.chestnut.media.utils.ScreenUtils;
+import com.chestnut.media.utils.TimeUtils;
 import com.chestnut.media.v.view.MyToast;
 import com.pili.pldroid.player.widget.PLVideoTextureView;
 
@@ -55,8 +55,13 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     private boolean hasNavigationBar = false;
     private FrameLayout frameLayout;
     private PLVideoTextureView mVideoView;
+    //屏幕调节模式：-1无，0：音量，1：亮度，2：快进退
+    private int selectMode = -1;
+    private int currentPointWhenScroll = 0;
+    private int screenSlideNum = 0;
 
     private GestureDetector.SimpleOnGestureListener simpleOnGestureListener = new GestureDetector.SimpleOnGestureListener() {
+
         @Override
         public boolean onDown(MotionEvent e) {
             p.onViewDownTouch();
@@ -66,52 +71,88 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
 
-            if (Math.abs(distanceY)>5) {
-                //调节音量：屏幕的右一半
-                if (e1.getRawX() >= ScreenUtils.getScreenWidth_PX(getActivity()) / 2) {
-                    xToast.setIcon(R.drawable.media_music);
-                    if (distanceY > 0)
-                        xToast.setTxt(audioMngHelper.addVoice100()).show();
-                    else
-                        xToast.setTxt(audioMngHelper.subVoice100()).show();
+            if (selectMode == -1) {
+                if (Math.abs(distanceY) > 5) {
+                    if (e1.getRawX() >= ScreenUtils.getScreenWidth_PX(getActivity()) / 2) {
+                        selectMode = 0;
+                        currentPointWhenScroll = audioMngHelper.get100CurrentVolume();
+                    }
+                    else {
+                        selectMode = 1;
+                        currentPointWhenScroll = LightUtils.getAppLight100(getActivity());
+                    }
                 }
-                //调节亮度：屏幕的左一半
-                else {
-                    xToast.setIcon(R.drawable.media_light);
-                    if (distanceY > 0)
-                        xToast.setTxt(LightUtils.addLight100(getActivity())).show();
-                    else
-                        xToast.setTxt(LightUtils.subLight100(getActivity())).show();
+                else if (Math.abs(distanceX) > 5) {
+                    selectMode = 2;
+                    currentPointWhenScroll = (int) (mVideoView.getCurrentPosition()/1000);
                 }
             }
-//            else if (Math.abs(distanceX)>5) {
-//                int screenWidth = ScreenUtils.getScreenWidth_PX(getActivity());
-//                float x = Math.abs(distanceX)/screenWidth;
-//                int max = (int) mVideoView.getDuration();
-//                float temp = max * x * 0.001f;
-//                //快进
-//                if (distanceX<0) {
-//                    currentPosition += temp;
-//                    currentPosition = currentPosition > max ? max : currentPosition;
-//                    p.seekToSecond(currentPosition);
-//                    xToast.setIcon(R.drawable.media_to_right)
-//                            .setTxt(TimeUtils.toMediaTime(currentPosition))
-//                            .show();
-//                }
-//                //快退
-//                else {
-//                    currentPosition -= temp;
-//                    currentPosition = currentPosition < 0 ? 0 : currentPosition;
-//                    p.seekToSecond(currentPosition);
-//                    xToast.setIcon(R.drawable.media_to_left)
-//                            .setTxt(TimeUtils.toMediaTime(currentPosition))
-//                            .show();
-//                }
-//            }
 
+            switch (selectMode) {
+                case 0:
+                case 1:
+                    int y = 150;//上下调节量
+                    int temp;
+                    float e1e2YSpace = e2.getRawY() - e1.getRawY();
+                    if (e1e2YSpace <0) {//+
+                        temp = (int) (Math.abs(e1e2YSpace) * (100 - currentPointWhenScroll) / (e1.getRawY() - y)) + currentPointWhenScroll;
+                    }
+                    else {//-
+                        int height = ScreenUtils.getScreenHeight_PX(getActivity());
+                        temp = currentPointWhenScroll - (int) (Math.abs(e1e2YSpace) * currentPointWhenScroll / (height - e1.getRawY() - y));
+                    }
+                    if (selectMode == 0)
+                        xToast.setIcon(R.drawable.media_music)
+                                .setTxt(audioMngHelper.setVoice100(temp))
+                                .show();
+                    else
+                        xToast.setIcon(R.drawable.media_light)
+                                .setTxt(LightUtils.setAppLight100(getActivity(),temp))
+                                .show();
+                    break;
+                case 2:
+                    int x = 150;//左右调节量
+                    float e1e2XSpace = e2.getRawX() - e1.getRawX();
+                    if (e1e2XSpace < 0) {//快退
+                        screenSlideNum = (int) (currentPointWhenScroll - currentPointWhenScroll * Math.abs(e1e2XSpace) / (e1.getRawX() - x));
+                        screenSlideNum = screenSlideNum <= 0 ? 0 : screenSlideNum;
+                        xToast.setIcon(R.drawable.media_to_left)
+                                .setTxt(TimeUtils.toMediaTime(screenSlideNum))
+                                .show();
+                    }
+                    else {//快进
+                        int duration = (int) (mVideoView.getDuration()/1000);
+                        screenSlideNum = (int) ((duration - currentPointWhenScroll) * Math.abs(e1e2XSpace) / (ScreenUtils.getScreenWidth_PX(getActivity()) - e1.getRawX() - x) + currentPointWhenScroll);
+                        screenSlideNum = screenSlideNum >= duration ? duration : screenSlideNum;
+                        xToast.setIcon(R.drawable.media_to_right)
+                                .setTxt(TimeUtils.toMediaTime(screenSlideNum))
+                                .show();
+                    }
+                    break;
+            }
             return super.onScroll(e1, e2, distanceX, distanceY);
         }
     };
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        gestureDetector.onTouchEvent(event);
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                if (selectMode == 2) {
+                    currentPosition = screenSlideNum;
+                    p.seekToSecond(currentPosition);
+                    tvProgress.setText(TimeUtils.toMediaTime(currentPosition));
+                    seekBarProgress.setProgress(currentPosition);
+                }
+                selectMode = -1;
+                currentPointWhenScroll = 0;
+                screenSlideNum = 0;
+                break;
+        }
+        return true;
+    }
 
     public VideoFragment() {}
 
@@ -235,7 +276,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     @Override
     public void setTimeCurrent(int seconds) {
         getActivity().runOnUiThread(()->{
-            if (currentPosition<=seconds && !isDragSeekBarByUser) {
+            if (!isDragSeekBarByUser) {
                 currentPosition = seconds;
                 tvProgress.setText(TimeUtils.toMediaTime(currentPosition));
                 seekBarProgress.setProgress(currentPosition);
@@ -312,6 +353,8 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
         if (fromUser) {
             tvProgress.setText(TimeUtils.toMediaTime(progress));
             seekBarProgress.setProgress(progress);
+            p.stopHideControlRunnable();
+            showControlView();
         }
     }
 
@@ -325,11 +368,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
         currentPosition = seekBar.getProgress();
         p.seekToSecond(currentPosition);
         isDragSeekBarByUser = false;
-    }
-
-    @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        gestureDetector.onTouchEvent(event);
-        return true;
+        p.startHideControlRunnable();
+        showControlView();
     }
 }

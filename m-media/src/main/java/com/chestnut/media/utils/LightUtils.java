@@ -55,7 +55,7 @@ public class LightUtils {
         WindowManager.LayoutParams localLayoutParams = localWindow.getAttributes();
         localLayoutParams.screenBrightness = paramInt * 0.01f;
         localWindow.setAttributes(localLayoutParams);
-        return getAppLight100(activity);
+        return paramInt;
     }
 
     /**

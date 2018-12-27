@@ -22,6 +22,8 @@ public interface VideoContract {
         void onDestroy();
         void playOrPause();
         void onViewDownTouch();
+        void stopHideControlRunnable();
+        void startHideControlRunnable();
     }
     interface V extends VideoControl{
         void showNotFoundVideo();

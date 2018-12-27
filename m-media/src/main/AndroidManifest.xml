@@ -13,12 +13,10 @@
     <application android:label="@string/media_app_name">
         <activity
             android:name=".v.music.MusicActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:theme="@style/media_MediaModuleTheme" />
+            android:configChanges="orientation|keyboardHidden|screenSize" />
         <activity
             android:name=".v.activity.VideoActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:theme="@style/media_MediaModuleTheme" />
+            android:configChanges="orientation|keyboardHidden|screenSize" />
     </application>
 
 </manifest>

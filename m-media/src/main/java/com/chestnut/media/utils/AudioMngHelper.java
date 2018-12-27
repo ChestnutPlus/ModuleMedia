@@ -123,7 +123,7 @@ public class AudioMngHelper {
         a = a<=0 ? 0 : a;
         a = a>=100 ? 100 : a;
         audioManager.setStreamVolume(NOW_AUDIO_TYPE,a,0);
-        return get100CurrentVolume();
+        return num;
     }
 
     /**
