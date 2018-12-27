@@ -51,6 +51,9 @@ public class MediaManager {
             builderLongSparseArray.put(sparseKey, builder);
             intent = new Intent(builder.context, VideoActivity.class);
         }
+        else if (builder instanceof MusicBuilder) {
+            builderLongSparseArray.put(sparseKey, builder);
+        }
         if (intent!=null) {
             if (!(builder.context instanceof Activity))
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -65,6 +68,10 @@ public class MediaManager {
      */
     public static VideoBuilder videoBuilder() {
         return new VideoBuilder();
+    }
+
+    public static MusicBuilder musicBuilder() {
+        return new MusicBuilder();
     }
 
     /**
