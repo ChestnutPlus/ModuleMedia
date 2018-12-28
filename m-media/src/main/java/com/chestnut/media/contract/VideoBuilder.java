@@ -1,5 +1,12 @@
 package com.chestnut.media.contract;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Typeface;
+
+import com.chestnut.media.v.activity.VideoActivity;
+
 /**
  * <pre>
  *     author: Chestnut
@@ -13,6 +20,35 @@ package com.chestnut.media.contract;
  */
 public class VideoBuilder extends Builder{
 
+    VideoBuilder() {}
 
+    public VideoBuilder setTypeface(Typeface typeface) {
+        this.typeface = typeface;
+        return this;
+    }
 
+    public VideoBuilder setUrl(String url) {
+        this.url = url;
+        return this;
+    }
+
+    public VideoBuilder setAutoPlay(boolean autoPlay) {
+        isAutoPlay = autoPlay;
+        return this;
+    }
+
+    public VideoBuilder setTitle(String title) {
+        this.title = title;
+        return this;
+    }
+
+    public void build(Context context) {
+        this.context = context;
+        long key = MediaManager.getInstance().push(this);
+        Intent intent = new Intent(context, VideoActivity.class);
+        if (!(context instanceof Activity))
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra(MediaManager.Key_Builder, key);
+        context.startActivity(intent);
+    }
 }

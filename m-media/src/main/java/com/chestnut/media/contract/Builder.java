@@ -14,38 +14,10 @@ import android.graphics.Typeface;
  *     update log:
  * </pre>
  */
-public abstract class Builder {
-
+public class Builder {
     public Typeface typeface = null;//字体
     public Context context;//上下文
     public String url = null;//文件地址或者是链接
     public boolean isAutoPlay = false;
     public String title = null;
-
-    Builder() {}
-
-    public void build(Context context) {
-        this.context = context;
-        MediaManager.getInstance().execute(this);
-    }
-
-    public Builder setTypeface(Typeface typeface) {
-        this.typeface = typeface;
-        return this;
-    }
-
-    public Builder setUrl(String url) {
-        this.url = url;
-        return this;
-    }
-
-    public Builder setAutoPlay(boolean autoPlay) {
-        isAutoPlay = autoPlay;
-        return this;
-    }
-
-    public Builder setTitle(String title) {
-        this.title = title;
-        return this;
-    }
 }

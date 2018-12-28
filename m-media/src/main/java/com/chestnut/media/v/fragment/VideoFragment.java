@@ -17,7 +17,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chestnut.media.R;
-import com.chestnut.media.contract.Builder;
 import com.chestnut.media.contract.MediaManager;
 import com.chestnut.media.contract.VideoBuilder;
 import com.chestnut.media.contract.VideoContract;
@@ -189,7 +188,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
         Intent intent = getActivity().getIntent();
         if (intent!=null && intent.getExtras()!=null) {
             long longKey = intent.getLongExtra(MediaManager.Key_Builder, -1);
-            Builder builder = MediaManager.getInstance().popAndClean(longKey);
+            Object builder = MediaManager.getInstance().popAndClean(longKey);
             if (builder instanceof VideoBuilder) {
                 p.setBuilder((VideoBuilder) builder);
             }

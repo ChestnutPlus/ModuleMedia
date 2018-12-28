@@ -1,10 +1,6 @@
 package com.chestnut.media.contract;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.util.LongSparseArray;
-
-import com.chestnut.media.v.activity.VideoActivity;
 
 /**
  * <pre>
@@ -20,8 +16,7 @@ import com.chestnut.media.v.activity.VideoActivity;
 public class MediaManager {
 
     public static String Key_Builder = "Key_Builder";
-
-    private LongSparseArray<Builder> builderLongSparseArray = new LongSparseArray<>();
+    private LongSparseArray<Object> builderLongSparseArray = new LongSparseArray<>();
 
     /*单例*/
     private static volatile MediaManager defaultInstance;
@@ -41,28 +36,6 @@ public class MediaManager {
     private MediaManager(){}
 
     /**
-     * 执行跳转
-     * @param builder builder
-     */
-    void execute(Builder builder){
-        long sparseKey = System.currentTimeMillis();
-        Intent intent = null;
-        if (builder instanceof VideoBuilder) {
-            builderLongSparseArray.put(sparseKey, builder);
-            intent = new Intent(builder.context, VideoActivity.class);
-        }
-        else if (builder instanceof MusicBuilder) {
-            builderLongSparseArray.put(sparseKey, builder);
-        }
-        if (intent!=null) {
-            if (!(builder.context instanceof Activity))
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.putExtra(Key_Builder, sparseKey);
-            builder.context.startActivity(intent);
-        }
-    }
-
-    /**
      * 得到建造者
      * @return 建造者
      */
@@ -79,13 +52,24 @@ public class MediaManager {
      * @param key key
      * @return builder
      */
-    public synchronized Builder pop(long key) {
+    public synchronized Object pop(long key) {
         return builderLongSparseArray.get(key,null);
     }
 
-    public synchronized Builder popAndClean(long key) {
-        Builder builder = builderLongSparseArray.get(key,null);
+    public synchronized Object popAndClean(long key) {
+        Object builder = builderLongSparseArray.get(key,null);
         builderLongSparseArray.clear();
         return builder;
+    }
+
+    /**
+     * push入新的 builder
+     * @param builder builder
+     * @return key
+     */
+    synchronized long push(Object builder) {
+        long sparseKey = System.currentTimeMillis();
+        builderLongSparseArray.put(sparseKey, builder);
+        return sparseKey;
     }
 }

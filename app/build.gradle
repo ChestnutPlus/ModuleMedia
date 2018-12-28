@@ -25,4 +25,5 @@ android {
 
 dependencies {
     implementation project(path: ':m-media')
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
 }

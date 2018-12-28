@@ -14,6 +14,13 @@ package com.chestnut.media.contract;
 public interface MusicContract {
     interface P {
         void setBuilder(MusicBuilder builder);
+        void start();
+        void stop();
+        void pause();
+        int getCurrentSecond();
+        int getTotalSecond();
+        void seekToSecond(int seconds);
+        void release();
     }
     interface V {
 

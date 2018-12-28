@@ -1,5 +1,6 @@
 package test.com.chestnut.Media;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -38,10 +39,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.button3).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                MediaManager.musicBuilder()
-                        .setAutoPlay(true)
-                        .setUrl("/sdcard/adb.mp3")
-                        .(MainActivity.this);
+                startActivity(new Intent(MainActivity.this, MusicTestActivity.class));
             }
         });
     }
