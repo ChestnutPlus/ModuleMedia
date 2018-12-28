@@ -12,7 +12,8 @@
 
     <application android:label="@string/media_app_name">
         <activity
-            android:name=".v.music.MusicActivity"
+            android:theme="@android:style/Theme.DeviceDefault.Dialog"
+            android:name=".v.activity.MusicDialogActivity"
             android:configChanges="orientation|keyboardHidden|screenSize" />
         <activity
             android:name=".v.activity.VideoActivity"

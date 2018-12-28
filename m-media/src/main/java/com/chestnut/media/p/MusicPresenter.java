@@ -154,6 +154,11 @@ public class MusicPresenter implements MusicContract.P{
     }
 
     @Override
+    public boolean isPlaying() {
+        return plMediaPlayer != null && plMediaPlayer.isPlaying();
+    }
+
+    @Override
     public void seekToSecond(int seconds) {
         if (plMediaPlayer!=null) {
             plMediaPlayer.seekTo(seconds * 1000);

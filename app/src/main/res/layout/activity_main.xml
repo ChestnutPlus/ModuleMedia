@@ -30,6 +30,24 @@
         android:layout_alignStart="@+id/button"
         android:layout_below="@+id/button2"
         android:layout_marginTop="11dp"
-        android:text="音频" />
+        android:text="音频控制" />
+
+    <Button
+        android:id="@+id/button4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/button"
+        android:layout_below="@+id/button3"
+        android:layout_marginTop="11dp"
+        android:text="音频-本地" />
+
+    <Button
+        android:id="@+id/button5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/button"
+        android:layout_below="@+id/button4"
+        android:layout_marginTop="11dp"
+        android:text="音频-网络" />
 
 </RelativeLayout>

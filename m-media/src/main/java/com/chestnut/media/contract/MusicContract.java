@@ -19,6 +19,7 @@ public interface MusicContract {
         void pause();
         int getCurrentSecond();
         int getTotalSecond();
+        boolean isPlaying();
         void seekToSecond(int seconds);
         void release();
     }

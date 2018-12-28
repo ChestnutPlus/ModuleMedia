@@ -1,54 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".v.music.MusicActivity">
+    android:layout_height="90dp"
+    android:background="@drawable/media_music_bg"
+    tools:context=".v.activity.MusicDialogActivity">
 
-    <RelativeLayout
-        android:background="#3e000000"
-        android:id="@+id/bottom_view"
-        android:layout_alignParentBottom="true"
+    <SeekBar
+        android:id="@+id/seekBar_progress"
+        style="@android:style/Widget.Holo.ProgressBar.Horizontal"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="12dp"
+        android:paddingTop="10dp"
+        android:max="0"
+        android:progress="0"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <ImageView
-            android:focusable="true"
-            android:clickable="true"
-            android:id="@+id/img_pause"
-            android:src="@drawable/media_play"
-            android:layout_gravity="center"
-            android:padding="8dp"
-            android:layout_margin="5dp"
-            android:layout_width="30dp"
-            android:layout_height="30dp" />
-        <TextView
-            android:layout_toEndOf="@id/img_pause"
-            android:layout_centerVertical="true"
-            android:id="@+id/txt_progress"
-            android:textSize="11sp"
-            android:text="00:00"
-            android:textColor="@android:color/white"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <TextView
-            android:layout_centerVertical="true"
-            android:layout_alignParentEnd="true"
-            android:id="@+id/txt_total"
-            android:textSize="11sp"
-            android:text="00:00"
-            android:layout_marginEnd="10dp"
-            android:textColor="@android:color/white"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <SeekBar
-            android:layout_centerVertical="true"
-            android:layout_toEndOf="@id/txt_progress"
-            android:id="@+id/progress"
-            style="@android:style/Widget.Holo.ProgressBar.Horizontal"
-            android:max="0"
-            android:progress="0"
-            android:layout_toStartOf="@+id/txt_total"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-    </RelativeLayout>
-</RelativeLayout>
+        android:layout_height="45dp"/>
+
+    <ImageView
+        android:focusable="true"
+        android:clickable="true"
+        android:id="@+id/img_pause_play"
+        android:src="@drawable/media_play_black"
+        android:layout_gravity="end|bottom"
+        android:padding="12dp"
+        android:layout_marginBottom="5dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="8dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp" />
+
+    <TextView
+        android:id="@+id/tv_title"
+        tools:text="你好.mp3"
+        android:layout_marginBottom="5dp"
+        android:layout_marginStart="20dp"
+        android:layout_gravity="bottom"
+        android:textColor="#000"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp" />
+</FrameLayout>

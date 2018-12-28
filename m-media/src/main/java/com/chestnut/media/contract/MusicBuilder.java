@@ -1,9 +1,12 @@
 package com.chestnut.media.contract;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Typeface;
 
 import com.chestnut.media.p.MusicPresenter;
+import com.chestnut.media.v.activity.MusicDialogActivity;
 
 /**
  * <pre>
@@ -56,7 +59,13 @@ public class MusicBuilder extends Builder{
     }
 
     public void build(Context context) {
-
+        this.context = context;
+        long key = MediaManager.getInstance().push(this);
+        Intent intent = new Intent(context, MusicDialogActivity.class);
+        if (!(context instanceof Activity))
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra(MediaManager.Key_Builder, key);
+        context.startActivity(intent);
     }
 
     public interface Callback {

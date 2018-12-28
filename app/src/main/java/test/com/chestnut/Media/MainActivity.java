@@ -42,5 +42,27 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(MainActivity.this, MusicTestActivity.class));
             }
         });
+        //音频-本地
+        findViewById(R.id.button4).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                MediaManager.musicBuilder()
+                        .setAutoPlay(true)
+                        .setTitle("陈奕迅-圣诞结")
+                        .setUrl("/sdcard/adb.mp3")
+                        .build(MainActivity.this);
+            }
+        });
+        //音频-网络
+        findViewById(R.id.button5).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                MediaManager.musicBuilder()
+                        .setAutoPlay(true)
+                        .setTitle("心酸")
+                        .setUrl("http://h5.honeybot.cn/c.mp3")
+                        .build(MainActivity.this);
+            }
+        });
     }
 }
