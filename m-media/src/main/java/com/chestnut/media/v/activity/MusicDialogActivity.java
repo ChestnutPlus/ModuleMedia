@@ -46,7 +46,7 @@ public class MusicDialogActivity extends Activity implements MusicContract.V, Vi
         seekBar = findViewById(R.id.seekBar_progress);
         seekBar.setOnSeekBarChangeListener(this);
         //init
-        p = new MusicPresenter(this);
+        p = new MusicPresenter();
         Intent intent = getIntent();
         if (intent!=null && intent.getExtras()!=null) {
             long longKey = intent.getLongExtra(MediaManager.Key_Builder, -1);
@@ -113,13 +113,13 @@ public class MusicDialogActivity extends Activity implements MusicContract.V, Vi
     @Override
     protected void onPause() {
         super.onPause();
-        p.pause();
+        p.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        p.start();
+        p.onResume();
     }
 
     @Override

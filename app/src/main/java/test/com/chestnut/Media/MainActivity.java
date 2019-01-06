@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 MediaManager.musicBuilder()
-                        .setAutoPlay(true)
+                        .setAutoPlay(false)
                         .setTitle("陈奕迅-圣诞结")
                         .setUrl("/sdcard/adb.mp3")
                         .build(MainActivity.this);

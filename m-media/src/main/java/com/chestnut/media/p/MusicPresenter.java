@@ -1,15 +1,15 @@
 package com.chestnut.media.p;
 
-import android.content.Context;
 import android.media.MediaPlayer;
 import android.os.Handler;
 
 import com.chestnut.media.contract.MediaManager;
 import com.chestnut.media.contract.MusicBuilder;
 import com.chestnut.media.contract.MusicContract;
+import com.danikula.videocache.CacheListener;
 import com.danikula.videocache.HttpProxyCacheServer;
-import com.pili.pldroid.player.AVOptions;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -26,12 +26,13 @@ import java.io.IOException;
 
 public class MusicPresenter implements MusicContract.P{
 
-    private MediaPlayer plMediaPlayer;
+    private MediaPlayer mediaPlayer;
     private MusicBuilder.Callback callback;
-    private int seekToSeconds = 0;
     private boolean isPrepared = false;
     private boolean isSetPlay = false;
     private Handler handler;
+    private HttpProxyCacheServer httpProxyCacheServer;
+    private MusicBuilder musicBuilder;
     private Runnable updatePlayProgress = new Runnable() {
         @Override
         public void run() {
@@ -41,73 +42,72 @@ public class MusicPresenter implements MusicContract.P{
             handler.postDelayed(updatePlayProgress,1000);
         }
     };
+    //缓存监听和设置
+    private CacheListener cacheListener = new CacheListener() {
+        @Override
+        public void onCacheAvailable(File cacheFile, String url, int percentsAvailable) {
+            if (callback != null)
+                callback.onBuffering(percentsAvailable);
+        }
+    };
 
-    public MusicPresenter(Context context) {
+    public MusicPresenter() {
         if (handler==null)
             handler = new Handler();
-        if (plMediaPlayer==null) {
-            AVOptions avOptions = new AVOptions();
-            avOptions.setString(AVOptions.KEY_CACHE_DIR,context.getCacheDir().getAbsolutePath());
-            plMediaPlayer = new MediaPlayer();
-            //准备好的回调
-            plMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mediaPlayer) {
-                    isPrepared = true;
-                    handler.removeCallbacks(updatePlayProgress);
-                    handler.post(updatePlayProgress);
-                    if (isSetPlay)
-                        mediaPlayer.start();
-                }
-            });
-//            //缓存监听和设置
-//            plMediaPlayer.setOnBufferingUpdateListener(i -> {
-//                if (callback != null)
-//                    callback.onBuffering(i);
-//            });
-            //完成播放监听
-            plMediaPlayer.setOnCompletionListener((mediaPlayer) -> {
-                handler.removeCallbacks(updatePlayProgress);
-                if (callback != null)
-                    callback.onCompletion();
-            });
-            //seekToCallback
-//            plMediaPlayer.setOnSeekCompleteListener(new PLOnSeekCompleteListener() {
-//                @Override
-//                public void onSeekComplete() {
-//                    if (callback != null)
-//                        callback.onSeekTo(seekToSeconds);
-//                    seekToSeconds = 0;
-//                }
-//            });
-            //ErrorCallback
-//            plMediaPlayer.setOnErrorListener(i -> {
-//                if (callback != null)
-//                    callback.onErr(i, "null");
-//                return false;
-//            });
-        }
+        initPlayer();
+    }
+
+    private void initPlayer() {
+        if (mediaPlayer!=null)
+            mediaPlayer.release();
+        mediaPlayer = new MediaPlayer();
+        //准备好的回调
+        mediaPlayer.setOnPreparedListener(mediaPlayer -> {
+            isPrepared = true;
+            handler.removeCallbacks(updatePlayProgress);
+            if (isSetPlay) {
+                handler.post(updatePlayProgress);
+                mediaPlayer.start();
+            }
+        });
+        //完成播放监听
+        mediaPlayer.setOnCompletionListener((mediaPlayer) -> {
+            handler.removeCallbacks(updatePlayProgress);
+            if (callback != null)
+                callback.onCompletion();
+        });
+        //ErrorCallback
+        mediaPlayer.setOnErrorListener((mediaPlayer, i, i1) -> {
+            if (callback != null)
+                callback.onErr(i, "code:"+i+","+i1);
+            return false;
+        });
     }
 
     @Override
     public void setBuilder(MusicBuilder builder) {
+        initPlayer();
         this.callback = builder.callback;
-        if (plMediaPlayer.isPlaying()) {
-            plMediaPlayer.stop();
+        this.musicBuilder = builder;
+        if (mediaPlayer.isPlaying()) {
+            mediaPlayer.stop();
         }
         try {
             isPrepared = false;
             handler.removeCallbacks(updatePlayProgress);
             String url;
             if (builder.url.contains("http")) {
-                HttpProxyCacheServer httpProxyCacheServer = MediaManager.getInstance().getProxy(builder.context.getApplicationContext());
+                httpProxyCacheServer = MediaManager.getInstance().getProxy(builder.context.getApplicationContext());
+                if (!httpProxyCacheServer.isCached(builder.url)) {
+                    httpProxyCacheServer.registerCacheListener(cacheListener,builder.url);
+                }
                 url = httpProxyCacheServer.getProxyUrl(builder.url);
             }
             else {
                 url = builder.url;
             }
-            plMediaPlayer.setDataSource(url);
-            plMediaPlayer.prepareAsync();
+            mediaPlayer.setDataSource(url);
+            mediaPlayer.prepareAsync();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -115,10 +115,10 @@ public class MusicPresenter implements MusicContract.P{
 
     @Override
     public void start() {
-        if (plMediaPlayer!=null) {
+        if (mediaPlayer!=null) {
             if (isPrepared) {
                 handler.post(updatePlayProgress);
-                plMediaPlayer.start();
+                mediaPlayer.start();
             }
             else {
                 isSetPlay = true;
@@ -130,8 +130,9 @@ public class MusicPresenter implements MusicContract.P{
 
     @Override
     public void stop() {
-        if (plMediaPlayer!=null) {
-            plMediaPlayer.stop();
+        if (mediaPlayer!=null) {
+            mediaPlayer.pause();
+            seekToSecond(0);
         }
         handler.removeCallbacks(updatePlayProgress);
         if (callback!=null)
@@ -140,8 +141,8 @@ public class MusicPresenter implements MusicContract.P{
 
     @Override
     public void pause() {
-        if (plMediaPlayer!=null) {
-            plMediaPlayer.pause();
+        if (mediaPlayer!=null) {
+            mediaPlayer.pause();
         }
         handler.removeCallbacks(updatePlayProgress);
         if (callback!=null)
@@ -150,8 +151,8 @@ public class MusicPresenter implements MusicContract.P{
 
     @Override
     public int getCurrentSecond() {
-        if (plMediaPlayer!=null && isPrepared) {
-            return (int) (plMediaPlayer.getCurrentPosition()/1000);
+        if (mediaPlayer!=null && isPrepared) {
+            return (int) (mediaPlayer.getCurrentPosition()/1000);
         }
         else
             return 0;
@@ -159,8 +160,8 @@ public class MusicPresenter implements MusicContract.P{
 
     @Override
     public int getTotalSecond() {
-        if (plMediaPlayer!=null && isPrepared) {
-            return (int) (plMediaPlayer.getDuration()/1000);
+        if (mediaPlayer!=null && isPrepared) {
+            return (int) (mediaPlayer.getDuration()/1000);
         }
         else
             return 0;
@@ -168,21 +169,35 @@ public class MusicPresenter implements MusicContract.P{
 
     @Override
     public boolean isPlaying() {
-        return plMediaPlayer != null && plMediaPlayer.isPlaying();
+        return mediaPlayer != null && mediaPlayer.isPlaying();
     }
 
     @Override
     public void seekToSecond(int seconds) {
-        if (plMediaPlayer!=null) {
-            plMediaPlayer.seekTo(seconds * 1000);
-            seekToSeconds = seconds;
+        if (mediaPlayer!=null) {
+            mediaPlayer.seekTo(seconds * 1000);
         }
     }
 
     @Override
     public void release() {
-        if (plMediaPlayer!=null)
-            plMediaPlayer.release();
+        if (mediaPlayer!=null)
+            mediaPlayer.release();
         handler.removeCallbacks(updatePlayProgress);
+        if (httpProxyCacheServer!=null)
+            httpProxyCacheServer.unregisterCacheListener(cacheListener);
+    }
+
+    @Override
+    public void onResume() {
+        if (musicBuilder!=null) {
+            if (musicBuilder.isAutoPlay)
+                start();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        pause();
     }
 }

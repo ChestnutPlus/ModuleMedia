@@ -59,7 +59,7 @@ public class MusicTestActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_music_test);
-        musicPresenter = new MusicPresenter(this);
+        musicPresenter = new MusicPresenter();
 
         findViewById(R.id.btn_load).setOnClickListener(v -> {
             String[] s = {
@@ -71,7 +71,9 @@ public class MusicTestActivity extends AppCompatActivity {
             musicPresenter.setBuilder(MediaManager.musicBuilder()
                     .setAutoPlay(true)
                     .setCallback(callback)
-                    .setUrl(s[index]));
+                    .setUrl(s[index])
+                    .buildNoView(MusicTestActivity.this)
+            );
             index++;
             if (index>=s.length)
                 index = 0;

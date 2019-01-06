@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
 
-import com.chestnut.media.p.MusicPresenter;
 import com.chestnut.media.v.activity.MusicDialogActivity;
 
 /**
@@ -51,11 +50,9 @@ public class MusicBuilder extends Builder{
         return this;
     }
 
-    public MusicPresenter buildNoView(Context context) {
+    public MusicBuilder buildNoView(Context context) {
         this.context = context;
-        MusicPresenter musicPresenter = new MusicPresenter(context);
-        musicPresenter.setBuilder(this);
-        return musicPresenter;
+        return this;
     }
 
     public void build(Context context) {

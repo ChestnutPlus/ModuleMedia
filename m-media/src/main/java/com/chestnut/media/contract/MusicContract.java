@@ -22,6 +22,8 @@ public interface MusicContract {
         boolean isPlaying();
         void seekToSecond(int seconds);
         void release();
+        void onResume();
+        void onPause();
     }
     interface V {
 
