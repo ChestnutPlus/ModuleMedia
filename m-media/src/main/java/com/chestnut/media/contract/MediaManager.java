@@ -1,6 +1,9 @@
 package com.chestnut.media.contract;
 
+import android.content.Context;
 import android.util.LongSparseArray;
+
+import com.danikula.videocache.HttpProxyCacheServer;
 
 /**
  * <pre>
@@ -17,6 +20,7 @@ public class MediaManager {
 
     public static String Key_Builder = "Key_Builder";
     private LongSparseArray<Object> builderLongSparseArray = new LongSparseArray<>();
+    private HttpProxyCacheServer proxy;
 
     /*单例*/
     private static volatile MediaManager defaultInstance;
@@ -34,6 +38,18 @@ public class MediaManager {
         return xFontUtils;
     }
     private MediaManager(){}
+
+    public HttpProxyCacheServer getProxy(Context context) {
+        return proxy == null ? (proxy = newProxy(context)) : proxy;
+    }
+
+    private HttpProxyCacheServer newProxy(Context context) {
+        return new HttpProxyCacheServer.Builder(context)
+                .maxCacheSize(15*1024*1024)
+                .maxCacheFilesCount(5)
+                .cacheDirectory(context.getCacheDir())
+                .build();
+    }
 
     /**
      * 得到建造者

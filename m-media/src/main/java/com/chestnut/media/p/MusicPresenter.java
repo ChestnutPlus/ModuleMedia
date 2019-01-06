@@ -1,14 +1,14 @@
 package com.chestnut.media.p;
 
 import android.content.Context;
+import android.media.MediaPlayer;
 import android.os.Handler;
 
+import com.chestnut.media.contract.MediaManager;
 import com.chestnut.media.contract.MusicBuilder;
 import com.chestnut.media.contract.MusicContract;
+import com.danikula.videocache.HttpProxyCacheServer;
 import com.pili.pldroid.player.AVOptions;
-import com.pili.pldroid.player.PLMediaPlayer;
-import com.pili.pldroid.player.PLOnPreparedListener;
-import com.pili.pldroid.player.PLOnSeekCompleteListener;
 
 import java.io.IOException;
 
@@ -26,10 +26,11 @@ import java.io.IOException;
 
 public class MusicPresenter implements MusicContract.P{
 
-    private PLMediaPlayer plMediaPlayer;
+    private MediaPlayer plMediaPlayer;
     private MusicBuilder.Callback callback;
     private int seekToSeconds = 0;
     private boolean isPrepared = false;
+    private boolean isSetPlay = false;
     private Handler handler;
     private Runnable updatePlayProgress = new Runnable() {
         @Override
@@ -47,43 +48,44 @@ public class MusicPresenter implements MusicContract.P{
         if (plMediaPlayer==null) {
             AVOptions avOptions = new AVOptions();
             avOptions.setString(AVOptions.KEY_CACHE_DIR,context.getCacheDir().getAbsolutePath());
-            plMediaPlayer = new PLMediaPlayer(context.getApplicationContext(), avOptions);
+            plMediaPlayer = new MediaPlayer();
             //准备好的回调
-            plMediaPlayer.setOnPreparedListener(new PLOnPreparedListener() {
+            plMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
-                public void onPrepared(int i) {
+                public void onPrepared(MediaPlayer mediaPlayer) {
                     isPrepared = true;
                     handler.removeCallbacks(updatePlayProgress);
                     handler.post(updatePlayProgress);
-//                plMediaPlayer.start();
+                    if (isSetPlay)
+                        mediaPlayer.start();
                 }
             });
-            //缓存监听和设置
-            plMediaPlayer.setOnBufferingUpdateListener(i -> {
-                if (callback != null)
-                    callback.onBuffering(i);
-            });
+//            //缓存监听和设置
+//            plMediaPlayer.setOnBufferingUpdateListener(i -> {
+//                if (callback != null)
+//                    callback.onBuffering(i);
+//            });
             //完成播放监听
-            plMediaPlayer.setOnCompletionListener(() -> {
+            plMediaPlayer.setOnCompletionListener((mediaPlayer) -> {
                 handler.removeCallbacks(updatePlayProgress);
                 if (callback != null)
                     callback.onCompletion();
             });
             //seekToCallback
-            plMediaPlayer.setOnSeekCompleteListener(new PLOnSeekCompleteListener() {
-                @Override
-                public void onSeekComplete() {
-                    if (callback != null)
-                        callback.onSeekTo(seekToSeconds);
-                    seekToSeconds = 0;
-                }
-            });
+//            plMediaPlayer.setOnSeekCompleteListener(new PLOnSeekCompleteListener() {
+//                @Override
+//                public void onSeekComplete() {
+//                    if (callback != null)
+//                        callback.onSeekTo(seekToSeconds);
+//                    seekToSeconds = 0;
+//                }
+//            });
             //ErrorCallback
-            plMediaPlayer.setOnErrorListener(i -> {
-                if (callback != null)
-                    callback.onErr(i, "null");
-                return false;
-            });
+//            plMediaPlayer.setOnErrorListener(i -> {
+//                if (callback != null)
+//                    callback.onErr(i, "null");
+//                return false;
+//            });
         }
     }
 
@@ -96,7 +98,15 @@ public class MusicPresenter implements MusicContract.P{
         try {
             isPrepared = false;
             handler.removeCallbacks(updatePlayProgress);
-            plMediaPlayer.setDataSource(builder.url);
+            String url;
+            if (builder.url.contains("http")) {
+                HttpProxyCacheServer httpProxyCacheServer = MediaManager.getInstance().getProxy(builder.context.getApplicationContext());
+                url = httpProxyCacheServer.getProxyUrl(builder.url);
+            }
+            else {
+                url = builder.url;
+            }
+            plMediaPlayer.setDataSource(url);
             plMediaPlayer.prepareAsync();
         } catch (IOException e) {
             e.printStackTrace();
@@ -106,10 +116,13 @@ public class MusicPresenter implements MusicContract.P{
     @Override
     public void start() {
         if (plMediaPlayer!=null) {
-            plMediaPlayer.setBufferingEnabled(true);
-            plMediaPlayer.start();
-            if (isPrepared)
+            if (isPrepared) {
                 handler.post(updatePlayProgress);
+                plMediaPlayer.start();
+            }
+            else {
+                isSetPlay = true;
+            }
         }
         if (callback!=null)
             callback.onStart();

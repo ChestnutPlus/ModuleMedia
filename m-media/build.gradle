@@ -22,4 +22,5 @@ android {
 dependencies {
     api 'com.android.support:appcompat-v7:25.4.0'
     implementation files('libs/pldroid-player-2.1.6.jar')
+    compile 'com.danikula:videocache:2.7.1'
 }
