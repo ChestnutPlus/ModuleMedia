@@ -1,13 +1,16 @@
 package com.chestnut.media.v.fragment;
 
-import android.content.Intent;
 import android.content.res.Configuration;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -17,16 +20,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chestnut.media.R;
-import com.chestnut.media.contract.MediaManager;
 import com.chestnut.media.contract.VideoBuilder;
 import com.chestnut.media.contract.VideoContract;
-import com.chestnut.media.p.VideoPresenter;
 import com.chestnut.media.utils.AudioMngHelper;
 import com.chestnut.media.utils.LightUtils;
 import com.chestnut.media.utils.ScreenUtils;
 import com.chestnut.media.utils.TimeUtils;
 import com.chestnut.media.v.view.MyToast;
-import com.pili.pldroid.player.widget.PLVideoTextureView;
+
+import java.io.IOException;
 
 /**
  * <pre>
@@ -41,7 +43,6 @@ import com.pili.pldroid.player.widget.PLVideoTextureView;
  */
 public class VideoFragment extends Fragment implements VideoContract.V, View.OnClickListener, SeekBar.OnSeekBarChangeListener, View.OnTouchListener{
 
-    private VideoContract.P p;
     private ImageView imgPausePlay;
     private TextView tvTotal, tvProgress, tvTitle;
     private SeekBar seekBarProgress;
@@ -53,7 +54,13 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     private boolean isDragSeekBarByUser = false;
     private boolean hasNavigationBar = false;
     private FrameLayout frameLayout;
-    private PLVideoTextureView mVideoView;
+
+    private SurfaceView surfaceView;
+    private MediaPlayer mediaPlayer;
+    private boolean isReady = false;
+
+    private VideoBuilder videoBuilder;
+
     //屏幕调节模式：-1无，0：音量，1：亮度，2：快进退
     private int selectMode = -1;
     private int currentPointWhenScroll = 0;
@@ -63,7 +70,6 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
 
         @Override
         public boolean onDown(MotionEvent e) {
-            p.onViewDownTouch();
             return super.onDown(e);
         }
 
@@ -83,7 +89,10 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
                 }
                 else if (Math.abs(distanceX) > 5) {
                     selectMode = 2;
-                    currentPointWhenScroll = (int) (mVideoView.getCurrentPosition()/1000);
+                    if (isReady)
+                        currentPointWhenScroll = (int) (mediaPlayer.getCurrentPosition()/1000);
+                    else
+                        currentPointWhenScroll = 0;
                 }
             }
 
@@ -120,7 +129,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
                                 .show();
                     }
                     else {//快进
-                        int duration = (int) (mVideoView.getDuration()/1000);
+                        int duration = isReady ? (int) (mediaPlayer.getDuration()/1000) : 0;
                         screenSlideNum = (int) ((duration - currentPointWhenScroll) * Math.abs(e1e2XSpace) / (ScreenUtils.getScreenWidth_PX(getActivity()) - e1.getRawX() - x) + currentPointWhenScroll);
                         screenSlideNum = screenSlideNum >= duration ? duration : screenSlideNum;
                         xToast.setIcon(R.drawable.media_to_right)
@@ -141,7 +150,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
             case MotionEvent.ACTION_CANCEL:
                 if (selectMode == 2) {
                     currentPosition = screenSlideNum;
-                    p.seekToSecond(currentPosition);
+                    mediaPlayer.seekTo(currentPosition);
                     tvProgress.setText(TimeUtils.toMediaTime(currentPosition));
                     seekBarProgress.setProgress(currentPosition);
                 }
@@ -155,19 +164,28 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
 
     public VideoFragment() {}
 
+    public void setVideoBuilder(VideoBuilder videoBuilder) {
+        this.videoBuilder = videoBuilder;
+        // set data source
+        try {
+            mediaPlayer.setDataSource(getActivity(), Uri.parse(videoBuilder.url));
+            mediaPlayer.prepareAsync();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.media_fragment_video, container, false);
 
+        mediaPlayer = new MediaPlayer();
         xToast = new MyToast(getActivity());
         audioMngHelper = new AudioMngHelper(getActivity());
         audioMngHelper.setVoiceStep100(1);
         gestureDetector = new GestureDetector(getContext(),simpleOnGestureListener);
 
-        mVideoView = (PLVideoTextureView) rootView.findViewById(R.id.pl_video_view);
-        View loadingView = rootView.findViewById(R.id.progress_loading);
-        mVideoView.setBufferingIndicator(loadingView);
         imgPausePlay = (ImageView) rootView.findViewById(R.id.img_pause_play);
         ImageView imgBack = (ImageView) rootView.findViewById(R.id.img_back);
         tvTotal = (TextView) rootView.findViewById(R.id.tv_total);
@@ -183,20 +201,46 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
         imgBack.setOnClickListener(this);
         seekBarProgress.setOnSeekBarChangeListener(this);
 
-        p = new VideoPresenter(this, mVideoView);
-        p.onCreate(getActivity());
-        Intent intent = getActivity().getIntent();
-        if (intent!=null && intent.getExtras()!=null) {
-            long longKey = intent.getLongExtra(MediaManager.Key_Builder, -1);
-            Object builder = MediaManager.getInstance().popAndClean(longKey);
-            if (builder instanceof VideoBuilder) {
-                p.setBuilder((VideoBuilder) builder);
-            }
-        }
-
         //底部状态栏
         hasNavigationBar = ScreenUtils.checkDeviceHasNavigationBar(getActivity());
         setViewParamsByVirtualBtn(hasNavigationBar);
+
+        // surface view
+        surfaceView = (SurfaceView) rootView.findViewById(R.id.surface_view);
+        SurfaceHolder surfaceHolder = surfaceView.getHolder();
+        surfaceHolder.addCallback(new SurfaceHolder.Callback() {
+            @Override
+            public void surfaceCreated(SurfaceHolder holder) {
+                mediaPlayer.setDisplay(holder);
+            }
+
+            @Override
+            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+            }
+
+            @Override
+            public void surfaceDestroyed(SurfaceHolder holder) {
+                mediaPlayer.setDisplay(null);
+            }
+        });
+
+        // mediaPlayer callback
+        mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+            @Override
+            public void onBufferingUpdate(MediaPlayer mp, int percent) {
+
+            }
+        });
+        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                isReady = true;
+                if (videoBuilder.isAutoPlay)
+                    mp.start();
+            }
+        });
+
         return rootView;
     }
 
@@ -221,26 +265,8 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        p.onPause();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        p.onResume();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        p.onDestroy();
-    }
-
-    @Override
     public void playVideo(String url) {
-        p.playVideo(url);
+
     }
 
     @Override
@@ -315,33 +341,31 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
 
     @Override
     public void seekToSecond(int seconds) {
-        p.seekToSecond(seconds);
+
     }
 
     @Override
     public void pauseVideo() {
-        p.pauseVideo();
+
     }
 
     @Override
     public void resumeVideo() {
-        p.resumeVideo();
+
     }
 
     @Override
     public void stopVideo() {
-        p.stopVideo();
+
     }
 
     @Override
     public void onClick(View v) {
         int i = v.getId();
         if (i == R.id.img_pause_play) {
-            p.playOrPause();
 
         }
         else if (i == R.id.img_back) {
-            p.onPause();
             getActivity().finish();
 
         }
@@ -349,25 +373,16 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        if (fromUser) {
-            tvProgress.setText(TimeUtils.toMediaTime(progress));
-            seekBarProgress.setProgress(progress);
-            p.stopHideControlRunnable();
-            showControlView();
-        }
+
     }
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
-        isDragSeekBarByUser = true;
+
     }
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-        currentPosition = seekBar.getProgress();
-        p.seekToSecond(currentPosition);
-        isDragSeekBarByUser = false;
-        p.startHideControlRunnable();
-        showControlView();
+
     }
 }
