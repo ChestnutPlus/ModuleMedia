@@ -50,6 +50,11 @@ public class MusicBuilder extends Builder{
         return this;
     }
 
+    public MusicBuilder setCacheAble(boolean cacheAble) {
+        this.cacheAble = cacheAble;
+        return this;
+    }
+
     public MusicBuilder buildNoView(Context context) {
         this.context = context;
         return this;

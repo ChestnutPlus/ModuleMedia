@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 MediaManager.musicBuilder()
                         .setAutoPlay(true)
+                        .setCacheAble(false)
                         .setTitle("心酸")
                         .setUrl("http://h5.honeybot.cn/c.mp3")
                         .build(MainActivity.this);

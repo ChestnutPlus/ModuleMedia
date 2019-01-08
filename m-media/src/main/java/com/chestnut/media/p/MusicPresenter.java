@@ -82,6 +82,11 @@ public class MusicPresenter implements MusicContract.P{
                 callback.onErr(i, "code:"+i+","+i1);
             return false;
         });
+        //buff
+        mediaPlayer.setOnBufferingUpdateListener((mp, percent) -> {
+            if (callback != null)
+                callback.onBuffering(percent);
+        });
     }
 
     @Override
@@ -96,7 +101,7 @@ public class MusicPresenter implements MusicContract.P{
             isPrepared = false;
             handler.removeCallbacks(updatePlayProgress);
             String url;
-            if (builder.url.contains("http")) {
+            if (builder.url.contains("http") && builder.cacheAble) {
                 httpProxyCacheServer = MediaManager.getInstance().getProxy(builder.context.getApplicationContext());
                 if (!httpProxyCacheServer.isCached(builder.url)) {
                     httpProxyCacheServer.registerCacheListener(cacheListener,builder.url);

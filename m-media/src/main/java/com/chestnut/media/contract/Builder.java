@@ -20,4 +20,5 @@ public class Builder {
     public String url = null;//文件地址或者是链接
     public boolean isAutoPlay = false;
     public String title = null;
+    public boolean cacheAble = true;
 }
