@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 MediaManager.videoBuilder()
-                        .setAutoPlay(true)
+                        .setAutoPlay(false)
                         .setTitle("Yellow")
                         .setUrl("http://1258339144.vod2.myqcloud.com/1b77e3cavodcq1258339144/f3ae580c5285890783708931103/4ayzIpIJ77gA.mp4")
                         .build(MainActivity.this);
