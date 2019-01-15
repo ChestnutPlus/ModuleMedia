@@ -21,6 +21,8 @@ import com.chestnut.media.v.activity.VideoActivity;
 public class VideoBuilder extends Builder{
 
     VideoBuilder() {}
+    public boolean isLoop = false;
+    public boolean isShowControlView = true;
 
     public VideoBuilder setTypeface(Typeface typeface) {
         this.typeface = typeface;
@@ -39,6 +41,21 @@ public class VideoBuilder extends Builder{
 
     public VideoBuilder setTitle(String title) {
         this.title = title;
+        return this;
+    }
+
+    public VideoBuilder setLoop(boolean loop) {
+        isLoop = loop;
+        return this;
+    }
+
+    public VideoBuilder setShowControlView(boolean showControlView) {
+        isShowControlView = showControlView;
+        return this;
+    }
+
+    public VideoBuilder setCacheAble(boolean cacheAble) {
+        this.cacheAble = cacheAble;
         return this;
     }
 

@@ -45,8 +45,8 @@ public class MediaManager {
 
     private HttpProxyCacheServer newProxy(Context context) {
         return new HttpProxyCacheServer.Builder(context)
-                .maxCacheSize(15*1024*1024)
-                .maxCacheFilesCount(5)
+                .maxCacheSize(100*1024*1024)
+                .maxCacheFilesCount(10)
                 .cacheDirectory(context.getCacheDir())
                 .build();
     }

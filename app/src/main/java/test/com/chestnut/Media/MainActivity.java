@@ -20,7 +20,9 @@ public class MainActivity extends AppCompatActivity {
                 MediaManager.videoBuilder()
                         .setAutoPlay(true)
                         .setTitle("小幸运日文版")
+                        .setShowControlView(false)
                         .setUrl("/sdcard/_23.mp4")
+                        .setLoop(false)
                         .build(MainActivity.this);
             }
         });
@@ -31,7 +33,10 @@ public class MainActivity extends AppCompatActivity {
                 MediaManager.videoBuilder()
                         .setAutoPlay(false)
                         .setTitle("Yellow")
-                        .setUrl("http://1258339144.vod2.myqcloud.com/1b77e3cavodcq1258339144/f3ae580c5285890783708931103/4ayzIpIJ77gA.mp4")
+                        .setLoop(true)
+//                        .setUrl("http://1258339144.vod2.myqcloud.com/1b77e3cavodcq1258339144/f3ae580c5285890783708931103/4ayzIpIJ77gA.mp4")
+                        .setUrl("http://h5.honeybot.cn/abc.mp4")
+                        .setCacheAble(true)
                         .build(MainActivity.this);
             }
         });
@@ -59,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 MediaManager.musicBuilder()
                         .setAutoPlay(true)
-                        .setCacheAble(false)
+                        .setCacheAble(true)
                         .setTitle("心酸")
                         .setUrl("http://h5.honeybot.cn/c.mp3")
                         .build(MainActivity.this);

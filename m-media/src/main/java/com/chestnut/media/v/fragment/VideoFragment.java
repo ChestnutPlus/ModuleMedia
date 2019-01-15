@@ -19,6 +19,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.chestnut.media.R;
+import com.chestnut.media.contract.MediaManager;
 import com.chestnut.media.contract.VideoBuilder;
 import com.chestnut.media.contract.VideoContract;
 import com.chestnut.media.utils.AudioMngHelper;
@@ -26,6 +27,8 @@ import com.chestnut.media.utils.LightUtils;
 import com.chestnut.media.utils.ScreenUtils;
 import com.chestnut.media.utils.TimeUtils;
 import com.chestnut.media.v.view.MyToast;
+import com.danikula.videocache.CacheListener;
+import com.danikula.videocache.HttpProxyCacheServer;
 
 import java.io.IOException;
 
@@ -52,6 +55,11 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     private boolean isDragSeekBarByUser = false;
     private boolean hasNavigationBar = false;
     private FrameLayout frameLayout;
+    private HttpProxyCacheServer httpProxyCacheServer;
+    //缓存监听和设置
+    private CacheListener cacheListener = (cacheFile, url, percentsAvailable) -> {
+        seekBarProgress.setSecondaryProgress((int) (getDurationSecond()*percentsAvailable*0.01f));
+    };
 
     private SurfaceView surfaceView;
     private MediaPlayer mediaPlayer;
@@ -71,6 +79,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
             }
         }
     };
+    private Runnable hideView = this::hideControlView;
 
     private VideoBuilder videoBuilder;
 
@@ -83,11 +92,20 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
 
         @Override
         public boolean onDown(MotionEvent e) {
+            if (bottomLayout.getVisibility()==View.VISIBLE) {
+                hideControlView();
+            }
+            else {
+                showControlView();
+            }
             return super.onDown(e);
         }
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+
+            if (!videoBuilder.isShowControlView)
+                return super.onScroll(e1, e2, distanceX, distanceY);
 
             if (selectMode == -1) {
                 if (Math.abs(distanceY) > 8) {
@@ -156,6 +174,26 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
         }
     };
 
+    private void startHideViewTimer() {
+        imgPausePlay.postDelayed(hideView,5000);
+    }
+
+    private void stopHideViewTimer() {
+        imgPausePlay.removeCallbacks(hideView);
+    }
+
+    private void showControlView() {
+        if (videoBuilder.isShowControlView) {
+            bottomLayout.setVisibility(View.VISIBLE);
+            topLayout.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hideControlView() {
+        bottomLayout.setVisibility(View.GONE);
+        topLayout.setVisibility(View.GONE);
+    }
+
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         gestureDetector.onTouchEvent(event);
@@ -178,9 +216,23 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     public void setVideoBuilder(VideoBuilder videoBuilder) {
         this.videoBuilder = videoBuilder;
         tvTitle.setText(videoBuilder.title);
+        if (!videoBuilder.isShowControlView)
+            hideControlView();
         // set data source
         try {
-            mediaPlayer.setDataSource(getActivity(), Uri.parse(videoBuilder.url));
+            String url;
+            if (videoBuilder.url.contains("http") && videoBuilder.cacheAble) {
+                httpProxyCacheServer = MediaManager.getInstance().getProxy(videoBuilder.context.getApplicationContext());
+                if (!httpProxyCacheServer.isCached(videoBuilder.url)) {
+                    httpProxyCacheServer.registerCacheListener(cacheListener,videoBuilder.url);
+                }
+                url = httpProxyCacheServer.getProxyUrl(videoBuilder.url);
+            }
+            else {
+                url = videoBuilder.url;
+            }
+            mediaPlayer.setDataSource(getActivity(), Uri.parse(url));
+            mediaPlayer.setLooping(videoBuilder.isLoop);
             mediaPlayer.prepareAsync();
         } catch (IOException e) {
             e.printStackTrace();
@@ -221,12 +273,14 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 isDragSeekBarByUser = true;
+                stopHideViewTimer();
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 isDragSeekBarByUser = false;
                 seekToSecond(seekBar.getProgress());
+                startHideViewTimer();
             }
         });
 
@@ -238,7 +292,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
         mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
             @Override
             public void onBufferingUpdate(MediaPlayer mp, int percent) {
-                seekBarProgress.setSecondaryProgress(getDurationSecond()*percent);
+                seekBarProgress.setSecondaryProgress((int) (getDurationSecond()*percent*0.01f));
             }
         });
         mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -385,6 +439,9 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     @Override
     public void playVideo() {
         if (!isRelease) {
+            stopHideViewTimer();
+            showControlView();
+            startHideViewTimer();
             mediaPlayer.start();
             if (isReady)
                 imgPausePlay.post(currentPositionRunnable);
@@ -404,6 +461,8 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
             mediaPlayer.setOnBufferingUpdateListener(null);
             mediaPlayer.stop();
             mediaPlayer.release();
+            if (httpProxyCacheServer!=null)
+                httpProxyCacheServer.unregisterCacheListener(cacheListener);
         }
     }
 
@@ -411,6 +470,9 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     public void onClick(View v) {
         int i = v.getId();
         if (i == R.id.img_pause_play) {
+            stopHideViewTimer();
+            showControlView();
+            startHideViewTimer();
             if (isReady) {
                 if (mediaPlayer.isPlaying())
                     pauseVideo();
