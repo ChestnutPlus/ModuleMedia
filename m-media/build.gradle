@@ -9,7 +9,7 @@ android {
         targetSdkVersion build.targetSdkVersion
         versionCode 1
         resConfigs "zh"
-        versionName "1.0.0"
+        versionName "1.0.1"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

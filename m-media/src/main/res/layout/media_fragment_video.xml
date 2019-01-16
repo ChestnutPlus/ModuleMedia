@@ -24,10 +24,9 @@
             android:id="@+id/img_pause_play"
             android:src="@drawable/media_play"
             android:layout_gravity="center"
-            android:padding="11dp"
-            android:layout_margin="5dp"
-            android:layout_width="40dp"
-            android:layout_height="40dp" />
+            android:padding="16dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp" />
         <TextView
             android:layout_toEndOf="@id/img_pause_play"
             android:layout_centerVertical="true"

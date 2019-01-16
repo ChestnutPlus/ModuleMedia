@@ -70,6 +70,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     private boolean isCompletePlay = false;
     private boolean isRelease = false;
     private boolean isStopState = false;
+    private boolean isClickPlay = false;
     private Runnable currentPositionRunnable = new Runnable() {
         @Override
         public void run() {
@@ -279,15 +280,15 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
             @Override
             public void onPrepared(MediaPlayer mp) {
                 isReady = true;
+                isStopState = false;
                 if (!isCompletePlay) {
-                    if (videoBuilder.isAutoPlay) {
+                    if (videoBuilder.isAutoPlay || isClickPlay) {
                         playVideo();
                     }
                     seekBarProgress.setMax(getDurationSecond());
                     tvTotal.setText(TimeUtils.toMediaTime(getDurationSecond()));
                 }
                 isCompletePlay = false;
-                isStopState = false;
             }
         });
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
@@ -393,6 +394,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
 
     @Override
     public void pauseVideo() {
+        isClickPlay = false;
         if (!isRelease && !isStopState) {
             mediaControlView.onControlViewClick();
             imgPausePlay.removeCallbacks(currentPositionRunnable);
@@ -411,12 +413,14 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
         if (!isRelease) {
             imgPausePlay.removeCallbacks(currentPositionRunnable);
             imgPausePlay.setImageResource(R.drawable.media_play);
-            mediaPlayer.seekTo(0);
-            mediaPlayer.stop();
+            if (isReady) {
+                mediaPlayer.seekTo(0);
+                mediaPlayer.stop();
+            }
             tvProgress.setText(TimeUtils.toMediaTime(0));
             seekBarProgress.setProgress(0);
             isStopState = true;
-            isReady = false;
+            isClickPlay = false;
         }
     }
 
@@ -424,18 +428,20 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     public void playVideo() {
         if (!isRelease) {
             mediaControlView.onControlViewClick();
-            if (!isStopState)
-                mediaPlayer.start();
-            else {
-                try {
-                    mediaPlayer.prepare();
+            isClickPlay = true;
+            if (isReady) {
+                if (!isStopState)
                     mediaPlayer.start();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                else {
+                    try {
+                        mediaPlayer.prepare();
+                        mediaPlayer.start();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-            if (isReady)
                 imgPausePlay.post(currentPositionRunnable);
+            }
             imgPausePlay.setImageResource(R.drawable.media_pause);
         }
     }
