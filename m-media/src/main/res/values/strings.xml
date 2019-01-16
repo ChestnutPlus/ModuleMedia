@@ -1,3 +1,4 @@
 <resources>
     <string name="media_app_name">media</string>
+    <string name="media_music_progress">{x} / {y}</string>
 </resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 背景图 -->
+    <item android:id="@android:id/background" android:drawable="@drawable/media_seek_bar_bg_music" />
+    <!-- 第二进度条的背景色 -->
+    <item android:id="@android:id/secondaryProgress"  >
+        <scale android:drawable="@drawable/media_seek_bar_secondary_line_music" android:scaleWidth="100%" />
+    </item>
+    <!-- 可拖动的进度条颜色 -->
+    <item android:id="@android:id/progress">
+        <scale android:drawable="@drawable/media_seek_bar_main_line_music" android:scaleWidth="100%" />
+    </item>
+</layer-list>

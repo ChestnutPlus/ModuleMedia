@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="media_seek_bar_bg">@android:color/transparent</color>
+    <color name="media_seek_bar_second">#7c7a7a</color>
+    <color name="media_seek_bar_main">#fff</color>
+    <color name="media_seek_bar_thumb_width_normal">#fff</color>
+
+    <color name="media_seek_bar_bg_music">@android:color/transparent</color>
+    <color name="media_seek_bar_second_music">#7c7a7a</color>
+    <color name="media_seek_bar_main_music">#000</color>
+    <color name="media_seek_bar_thumb_width_normal_music">#000</color>
+</resources>

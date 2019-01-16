@@ -70,5 +70,12 @@ public class MainActivity extends AppCompatActivity {
                         .build(MainActivity.this);
             }
         });
+        //视频-控制
+        findViewById(R.id.button6).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this, VideoTestActivity.class));
+            }
+        });
     }
 }

@@ -18,7 +18,6 @@
         <activity
             android:name=".v.activity.VideoActivity"
             android:configChanges="orientation|keyboardHidden|screenSize" />
-        <activity android:name=".v.activity.XVideoActivity"></activity>
     </application>
 
 </manifest>

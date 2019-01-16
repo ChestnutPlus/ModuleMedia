@@ -8,14 +8,17 @@
 
     <SeekBar
         android:id="@+id/seekBar_progress"
-        style="@android:style/Widget.Holo.ProgressBar.Horizontal"
-        android:layout_marginStart="5dp"
-        android:layout_marginEnd="12dp"
-        android:paddingTop="10dp"
+        android:progressDrawable="@drawable/media_seek_bar_progress_music"
+        android:thumb="@drawable/media_seek_bar_thumb_music"
+        android:paddingStart="20dp"
+        android:paddingEnd="25dp"
+        android:layout_marginStart="15dp"
+        android:layout_marginEnd="15dp"
+        android:layout_marginTop="20dp"
         android:max="0"
         android:progress="0"
         android:layout_width="match_parent"
-        android:layout_height="45dp"/>
+        android:layout_height="wrap_content"/>
 
     <ImageView
         android:focusable="true"
@@ -39,6 +42,17 @@
         android:textColor="#000"
         android:textSize="12sp"
         android:gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp" />
+
+    <TextView
+        android:id="@+id/tv_progress"
+        android:text="@string/media_music_progress"
+        android:layout_marginBottom="5dp"
+        android:textColor="#000"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:layout_gravity="center_horizontal|bottom"
         android:layout_width="wrap_content"
         android:layout_height="40dp" />
 </FrameLayout>

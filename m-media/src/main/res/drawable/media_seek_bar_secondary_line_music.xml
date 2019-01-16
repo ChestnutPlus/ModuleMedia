@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="line">
+    <stroke android:width="@dimen/media_seek_bar_height_music" android:color="@color/media_seek_bar_second_music"/>
+</shape>

@@ -50,8 +50,11 @@
         <SeekBar
             android:layout_centerVertical="true"
             android:layout_toEndOf="@id/tv_progress"
-            android:id="@+id/seekBar_prgress"
-            style="@android:style/Widget.Holo.ProgressBar.Horizontal"
+            android:id="@+id/seekBar_progress"
+            android:thumb="@drawable/media_seek_thumb_normal"
+            android:progressDrawable="@drawable/media_seek_bar_progress"
+            android:layout_marginStart="15dp"
+            android:layout_marginEnd="15dp"
             android:max="0"
             android:progress="0"
             android:layout_toStartOf="@+id/tv_total"
@@ -94,4 +97,29 @@
         android:layout_width="40dp"
         android:layout_height="40dp" />
 
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/ll_media_icon"
+        android:visibility="invisible"
+        android:orientation="vertical"
+        android:background="@drawable/media_round_bg"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <ImageView
+            android:id="@+id/img_icon"
+            android:src="@drawable/media_music"
+            android:layout_marginTop="5dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp" />
+        <TextView
+            android:layout_marginBottom="3dp"
+            android:id="@+id/tv_txt"
+            android:textSize="13sp"
+            android:gravity="center"
+            tools:text="12%"
+            android:textColor="#fff"
+            android:layout_width="80dp"
+            android:layout_height="20dp"/>
+    </LinearLayout>
 </FrameLayout>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="media_seek_bar_height">2dp</dimen>
+    <dimen name="media_seek_bar_thumb_width_normal">13dp</dimen>
+
+    <dimen name="media_seek_bar_height_music">2dp</dimen>
+    <dimen name="media_seek_bar_thumb_width_normal_music">13dp</dimen>
+</resources>

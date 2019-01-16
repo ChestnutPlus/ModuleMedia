@@ -68,4 +68,9 @@ public class VideoBuilder extends Builder{
         intent.putExtra(MediaManager.Key_Builder, key);
         context.startActivity(intent);
     }
+
+    public VideoBuilder buildNoView(Context context) {
+        this.context = context;
+        return this;
+    }
 }
