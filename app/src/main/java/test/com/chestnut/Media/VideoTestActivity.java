@@ -25,5 +25,16 @@ public class VideoTestActivity extends AppCompatActivity {
         VideoFragment fragment = (VideoFragment) getSupportFragmentManager().findFragmentById(com.chestnut.media.R.id.frame_layout);
         fragment.setVideoBuilder(videoBuilder);
 
+        findViewById(R.id.btn_stop).setOnClickListener(v -> {
+            fragment.stopVideo();
+        });
+
+        findViewById(R.id.btn_play).setOnClickListener(v -> {
+            fragment.playVideo();
+        });
+
+        findViewById(R.id.btn_pause).setOnClickListener(v -> {
+            fragment.pauseVideo();
+        });
     }
 }

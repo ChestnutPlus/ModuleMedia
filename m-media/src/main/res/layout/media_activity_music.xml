@@ -47,7 +47,7 @@
 
     <TextView
         android:id="@+id/tv_progress"
-        android:text="@string/media_music_progress"
+        android:text="00:00 / 00:00"
         android:layout_marginBottom="5dp"
         android:textColor="#000"
         android:textSize="12sp"

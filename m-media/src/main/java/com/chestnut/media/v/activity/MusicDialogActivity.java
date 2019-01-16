@@ -17,6 +17,7 @@ import com.chestnut.media.contract.MediaManager;
 import com.chestnut.media.contract.MusicBuilder;
 import com.chestnut.media.contract.MusicContract;
 import com.chestnut.media.p.MusicPresenter;
+import com.chestnut.media.utils.TimeUtils;
 
 import java.io.File;
 
@@ -25,6 +26,8 @@ public class MusicDialogActivity extends Activity implements MusicContract.V, Vi
     private MusicContract.P p;
     private SeekBar seekBar;
     private ImageView imgPausePlay;
+    private TextView tvProgress;
+    private boolean isDragByUser = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +47,7 @@ public class MusicDialogActivity extends Activity implements MusicContract.V, Vi
         imgPausePlay = findViewById(R.id.img_pause_play);
         imgPausePlay.setOnClickListener(this);
         seekBar = findViewById(R.id.seekBar_progress);
+        tvProgress = findViewById(R.id.tv_progress);
         seekBar.setOnSeekBarChangeListener(this);
         //init
         p = new MusicPresenter();
@@ -102,8 +106,11 @@ public class MusicDialogActivity extends Activity implements MusicContract.V, Vi
 
                 @Override
                 public void onProgressChange(int currentSecond, int totalSecond) {
-                    seekBar.setMax(totalSecond);
-                    seekBar.setProgress(currentSecond);
+                    if (!isDragByUser) {
+                        seekBar.setMax(totalSecond);
+                        seekBar.setProgress(currentSecond);
+                        tvProgress.setText(TimeUtils.toMediaTime(currentSecond)+" / "+TimeUtils.toMediaTime(totalSecond));
+                    }
                 }
             });
             p.setBuilder(builder);
@@ -141,16 +148,17 @@ public class MusicDialogActivity extends Activity implements MusicContract.V, Vi
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-
+        tvProgress.setText(TimeUtils.toMediaTime(seekBar.getProgress())+" / "+TimeUtils.toMediaTime(p.getTotalSecond()));
     }
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
-
+        isDragByUser = true;
     }
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
+        isDragByUser = false;
         p.seekToSecond(seekBar.getProgress());
         p.start();
     }

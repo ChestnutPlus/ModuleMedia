@@ -51,7 +51,6 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     private ImageView imgPausePlay;
     private TextView tvTotal, tvProgress, tvTitle;
     private SeekBar seekBarProgress;
-    private View bottomLayout, topLayout;
     private IMediaIcon<MediaIconView> mediaDialog;
     private IMediaControlView mediaControlView;
     private AudioMngHelper audioMngHelper;
@@ -70,6 +69,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     private boolean isReady = false;
     private boolean isCompletePlay = false;
     private boolean isRelease = false;
+    private boolean isStopState = false;
     private Runnable currentPositionRunnable = new Runnable() {
         @Override
         public void run() {
@@ -230,6 +230,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
         audioMngHelper = new AudioMngHelper(getActivity());
         audioMngHelper.setVoiceStep100(1);
         gestureDetector = new GestureDetector(getContext(),simpleOnGestureListener);
+        mediaControlView = new MediaControlView(rootView.findViewById(R.id.bottom_view), rootView.findViewById(R.id.top_view));
 
         imgPausePlay = (ImageView) rootView.findViewById(R.id.img_pause_play);
         ImageView imgBack = (ImageView) rootView.findViewById(R.id.img_back);
@@ -237,11 +238,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
         tvProgress = (TextView) rootView.findViewById(R.id.tv_progress);
         tvTitle = (TextView) rootView.findViewById(R.id.tv_title);
         seekBarProgress = (SeekBar) rootView.findViewById(R.id.seekBar_progress);
-        bottomLayout = rootView.findViewById(R.id.bottom_view);
-        topLayout = rootView.findViewById(R.id.top_view);
         frameLayout = rootView.findViewById(R.id.frame_layout);
-
-        mediaControlView = new MediaControlView(bottomLayout,topLayout);
 
         frameLayout.setOnTouchListener(this);
         imgPausePlay.setOnClickListener(this);
@@ -290,6 +287,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
                     tvTotal.setText(TimeUtils.toMediaTime(getDurationSecond()));
                 }
                 isCompletePlay = false;
+                isStopState = false;
             }
         });
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
@@ -395,7 +393,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
 
     @Override
     public void pauseVideo() {
-        if (!isRelease) {
+        if (!isRelease && !isStopState) {
             mediaControlView.onControlViewClick();
             imgPausePlay.removeCallbacks(currentPositionRunnable);
             imgPausePlay.setImageResource(R.drawable.media_play);
@@ -405,13 +403,7 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
 
     @Override
     public void resumeVideo() {
-        if (!isRelease) {
-            mediaControlView.onControlViewClick();
-            mediaPlayer.start();
-            if (isReady)
-                imgPausePlay.post(currentPositionRunnable);
-            imgPausePlay.setImageResource(R.drawable.media_pause);
-        }
+        playVideo();
     }
 
     @Override
@@ -419,7 +411,12 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
         if (!isRelease) {
             imgPausePlay.removeCallbacks(currentPositionRunnable);
             imgPausePlay.setImageResource(R.drawable.media_play);
+            mediaPlayer.seekTo(0);
             mediaPlayer.stop();
+            tvProgress.setText(TimeUtils.toMediaTime(0));
+            seekBarProgress.setProgress(0);
+            isStopState = true;
+            isReady = false;
         }
     }
 
@@ -427,7 +424,16 @@ public class VideoFragment extends Fragment implements VideoContract.V, View.OnC
     public void playVideo() {
         if (!isRelease) {
             mediaControlView.onControlViewClick();
-            mediaPlayer.start();
+            if (!isStopState)
+                mediaPlayer.start();
+            else {
+                try {
+                    mediaPlayer.prepare();
+                    mediaPlayer.start();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             if (isReady)
                 imgPausePlay.post(currentPositionRunnable);
             imgPausePlay.setImageResource(R.drawable.media_pause);

@@ -14,4 +14,31 @@
         android:layout_width="350dp"
         android:layout_height="200dp"/>
 
+    <Button
+        android:id="@+id/btn_play"
+        android:layout_margin="5dp"
+        android:text="播放"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/frame_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/btn_pause"
+        android:layout_margin="5dp"
+        android:text="暂停"
+        android:layout_below="@id/btn_play"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/btn_stop"
+        android:layout_margin="5dp"
+        android:text="停止"
+        android:layout_below="@id/btn_pause"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
 </RelativeLayout>
